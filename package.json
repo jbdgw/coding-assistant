@@ -35,9 +35,11 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
+    "@e2b/code-interpreter": "latest",
     "@mastra/core": "latest",
     "@mastra/loggers": "latest",
     "@mastra/memory": "latest",
+    "@openrouter/ai-sdk-provider": "^1.2.0",
     "ai": "latest",
     "axios": "^1.7.2",
     "chalk": "^5.3.0",

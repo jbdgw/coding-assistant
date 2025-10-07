@@ -68,6 +68,20 @@ export class ConfigManager {
   getConfigPath(): string {
     return configStore.getPath();
   }
+
+  // E2B API Key methods
+  hasE2BApiKey(): boolean {
+    const apiKey = configStore.get('e2bApiKey');
+    return !!apiKey && apiKey.length > 0;
+  }
+
+  getE2BApiKey(): string | undefined {
+    return configStore.get('e2bApiKey');
+  }
+
+  setE2BApiKey(apiKey: string): void {
+    configStore.set('e2bApiKey', apiKey);
+  }
 }
 
 export const configManager = new ConfigManager();

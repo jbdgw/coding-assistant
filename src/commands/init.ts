@@ -9,10 +9,15 @@ interface InitAnswers {
   temperature: number;
   maxTokens: number;
   setBudget: boolean;
+  setupE2B: boolean;
 }
 
 interface BudgetAnswers {
   budgetLimit: number;
+}
+
+interface E2BAnswers {
+  e2bApiKey: string;
 }
 
 export async function initCommand(): Promise<void> {
@@ -73,6 +78,12 @@ export async function initCommand(): Promise<void> {
       message: 'Would you like to set a budget limit?',
       default: false,
     },
+    {
+      type: 'confirm',
+      name: 'setupE2B',
+      message: 'Would you like to set up E2B for code execution? (optional)',
+      default: false,
+    },
   ]);
 
   let budgetLimit: number | undefined;
@@ -95,6 +106,33 @@ export async function initCommand(): Promise<void> {
     budgetLimit = budgetAnswer.budgetLimit;
   }
 
+  let e2bApiKey: string | undefined;
+
+  if (answers.setupE2B) {
+    Display.newline();
+    Display.info('E2B enables secure code execution in sandboxed environments.');
+    Display.info('Get your API key at: https://e2b.dev/dashboard?tab=keys');
+    Display.newline();
+
+    const e2bAnswer = await inquirer.prompt<E2BAnswers>([
+      {
+        type: 'password',
+        name: 'e2bApiKey',
+        message: 'Enter your E2B API key (or leave empty to skip):',
+        validate: (input: string) => {
+          if (input && !input.startsWith('e2b_')) {
+            return 'E2B API keys should start with "e2b_"';
+          }
+          return true;
+        },
+      },
+    ]);
+
+    if (e2bAnswer.e2bApiKey && e2bAnswer.e2bApiKey.trim().length > 0) {
+      e2bApiKey = e2bAnswer.e2bApiKey.trim();
+    }
+  }
+
   // Validate API key
   const spinner = ora('Validating API key...').start();
 
@@ -113,6 +151,7 @@ export async function initCommand(): Promise<void> {
     // Save configuration
     configManager.setConfig({
       openrouterApiKey: answers.apiKey,
+      e2bApiKey,
       defaultModel: answers.defaultModel,
       temperature: answers.temperature,
       maxTokens: answers.maxTokens,
@@ -130,8 +169,16 @@ export async function initCommand(): Promise<void> {
     if (budgetLimit) {
       console.log(`  Budget Limit: $${budgetLimit.toFixed(2)}`);
     }
+    if (e2bApiKey) {
+      console.log(`  E2B Code Execution: Enabled ✓`);
+    } else {
+      console.log(`  E2B Code Execution: Not configured`);
+    }
     Display.newline();
     Display.info('You can now start chatting with: my-cli chat');
+    if (!e2bApiKey) {
+      Display.info('To enable code execution later, get an E2B key at: https://e2b.dev/dashboard');
+    }
     Display.newline();
   } catch (error) {
     spinner.fail('Validation failed');

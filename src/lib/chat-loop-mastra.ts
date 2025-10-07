@@ -1,30 +1,30 @@
 import readline from 'readline';
 import ora from 'ora';
 import { Display } from '../utils/display.js';
-import { OpenRouterClient, OpenRouterMessage } from './openrouter.js';
 import { CostTracker } from './cost-tracker.js';
 import { configManager } from './config.js';
 import { E2BSandboxManager } from './e2b-sandbox-manager.js';
+import { createChatAgent } from '../mastra/agents/chat-agent.js';
+import { Agent } from '@mastra/core/agent';
+import chalk from 'chalk';
 
-export interface ChatLoopOptions {
+export interface MastraChatLoopOptions {
   model: string;
-  openRouterClient: OpenRouterClient;
-  initialMessages?: OpenRouterMessage[];
 }
 
-export class ChatLoop {
+export class MastraChatLoop {
   private model: string;
-  private client: OpenRouterClient;
+  private agent: Agent;
   private costTracker: CostTracker;
-  private conversationHistory: OpenRouterMessage[];
+  private conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>;
   private rl: readline.Interface;
   private isRunning: boolean = false;
 
-  constructor(options: ChatLoopOptions) {
+  constructor(options: MastraChatLoopOptions) {
     this.model = options.model;
-    this.client = options.openRouterClient;
+    this.agent = createChatAgent(this.model);
     this.costTracker = new CostTracker();
-    this.conversationHistory = options.initialMessages || [];
+    this.conversationHistory = [];
 
     this.rl = readline.createInterface({
       input: process.stdin,
@@ -35,8 +35,16 @@ export class ChatLoop {
 
   start(): void {
     this.isRunning = true;
-    Display.header('AI Coding Chat');
+    Display.header('AI Coding Chat with E2B');
     Display.info(`Model: ${this.model}`);
+
+    // Check if E2B is configured
+    if (process.env.E2B_API_KEY) {
+      Display.success('E2B Code Execution: Enabled ✓');
+    } else {
+      Display.warning('E2B Code Execution: Not configured');
+    }
+
     Display.info('Type /help for available commands, /exit to quit');
     console.log();
 
@@ -52,9 +60,8 @@ export class ChatLoop {
 
       // Handle slash commands
       if (trimmed.startsWith('/')) {
-        void this.handleCommand(trimmed).then(() => {
-          this.rl.prompt();
-        });
+        this.handleCommand(trimmed);
+        this.rl.prompt();
         return;
       }
 
@@ -69,26 +76,13 @@ export class ChatLoop {
     });
   }
 
-  private async handleCommand(command: string): Promise<void> {
+  private handleCommand(command: string): void {
     const parts = command.slice(1).split(' ');
     const cmd = parts[0].toLowerCase();
-    const args = parts.slice(1);
 
     switch (cmd) {
       case 'help':
         Display.commands();
-        break;
-
-      case 'model':
-        if (args.length === 0) {
-          Display.error('Please specify a model name. Example: /model gpt-4o');
-        } else {
-          await this.switchModel(args.join(' '));
-        }
-        break;
-
-      case 'models':
-        await this.listModels();
         break;
 
       case 'clear':
@@ -110,7 +104,6 @@ export class ChatLoop {
   }
 
   private async handleMessage(userMessage: string): Promise<void> {
-    // Add user message to history
     this.conversationHistory.push({
       role: 'user',
       content: userMessage,
@@ -119,39 +112,40 @@ export class ChatLoop {
     const spinner = ora('Thinking...').start();
 
     try {
-      const temperature = configManager.get('temperature') || 0.7;
-      const maxTokens = configManager.get('maxTokens') || 4000;
-
-      let fullResponse = '';
-
-      // Use streaming for better UX
-      const { stream, getUsage } = await this.client.chatStream(this.conversationHistory, this.model, {
-        temperature,
-        maxTokens,
+      // Use Mastra agent with tools
+      const result = await this.agent.generate(userMessage, {
+        modelSettings: {
+          temperature: configManager.get('temperature') || 0.7,
+          maxTokens: configManager.get('maxTokens') || 4000,
+        },
+        maxSteps: 10, // Allow multiple tool calls
       });
 
       spinner.stop();
       Display.newline();
       console.log(chalk.green('Assistant:'));
+      console.log(result.text);
+      Display.newline();
 
-      for await (const chunk of stream) {
-        process.stdout.write(chunk);
-        fullResponse += chunk;
+      // Track token usage if available
+      if (result.usage) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const promptTokens = typeof result.usage.promptTokens === 'number' ? result.usage.promptTokens : 0;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const completionTokens = typeof result.usage.completionTokens === 'number' ? result.usage.completionTokens : 0;
+        const usage = {
+          promptTokens: promptTokens as number,
+          completionTokens: completionTokens as number,
+        };
+        const costInfo = this.costTracker.addUsage(usage, this.model);
+        Display.usage(costInfo.usage.promptTokens, costInfo.usage.completionTokens, costInfo.cost);
       }
-
-      Display.newline();
-      Display.newline();
 
       // Add assistant response to history
       this.conversationHistory.push({
         role: 'assistant',
-        content: fullResponse,
+        content: result.text || '',
       });
-
-      // Get usage and track cost
-      const usage = getUsage();
-      const costInfo = this.costTracker.addUsage(usage, this.model);
-      Display.usage(costInfo.usage.promptTokens, costInfo.usage.completionTokens, costInfo.cost);
 
       // Check budget limit
       const budgetLimit = configManager.getBudgetLimit();
@@ -160,49 +154,10 @@ export class ChatLoop {
         Display.info('Session will end.');
         this.rl.close();
       }
-    } catch (error) {
+    } catch (err) {
       spinner.stop();
-      Display.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  private async switchModel(newModel: string): Promise<void> {
-    try {
-      // Validate model exists
-      const spinner = ora('Checking model...').start();
-      const models = await this.client.listModels();
-      spinner.stop();
-
-      const modelExists = models.some(m => m.id === newModel);
-      if (!modelExists) {
-        Display.error(`Model '${newModel}' not found. Use /models to see available models.`);
-        return;
-      }
-
-      this.model = newModel;
-      this.rl.setPrompt(Display.modelPrompt(this.model));
-      Display.success(`Switched to model: ${newModel}`);
-    } catch (error) {
-      Display.error(`Failed to switch model: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  private async listModels(): Promise<void> {
-    const spinner = ora('Fetching models...').start();
-    try {
-      const models = await this.client.listModels();
-      spinner.stop();
-
-      // Show popular models first
-      const popularModels = models.filter(
-        m => m.id.includes('claude') || m.id.includes('gpt-4') || m.id.includes('gemini')
-      );
-
-      Display.modelList(popularModels.slice(0, 10));
-      Display.info(`Showing 10 of ${models.length} available models`);
-    } catch (error) {
-      spinner.stop();
-      Display.error(`Failed to fetch models: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      Display.error(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      console.error(err);
     }
   }
 
@@ -241,6 +196,3 @@ export class ChatLoop {
     process.exit(0);
   }
 }
-
-// Need to import chalk for streaming output
-import chalk from 'chalk';

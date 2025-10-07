@@ -4,6 +4,7 @@ import { z } from 'zod';
 // Configuration schema
 const _configSchema = z.object({
   openrouterApiKey: z.string().optional(),
+  e2bApiKey: z.string().optional(),
   defaultModel: z.string().default('anthropic/claude-3.5-sonnet'),
   temperature: z.number().min(0).max(2).default(0.7),
   maxTokens: z.number().positive().default(4000),
@@ -20,6 +21,9 @@ class ConfigStore {
       projectName: 'ai-coding-cli',
       schema: {
         openrouterApiKey: {
+          type: 'string',
+        },
+        e2bApiKey: {
           type: 'string',
         },
         defaultModel: {
