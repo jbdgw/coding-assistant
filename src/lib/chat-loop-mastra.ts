@@ -7,36 +7,69 @@ import { E2BSandboxManager } from './e2b-sandbox-manager.js';
 import { createChatAgent } from '../mastra/agents/chat-agent.js';
 import { Agent } from '@mastra/core/agent';
 import chalk from 'chalk';
+import { ProviderManager } from './provider-manager.js';
+import type { RoutingStrategy, RoutingDecision } from '../types/routing.js';
 
 export interface MastraChatLoopOptions {
   model: string;
+  useSmartRouting?: boolean;
+  strategy?: RoutingStrategy;
+  budgetLimit?: number;
 }
 
 export class MastraChatLoop {
   private model: string;
   private agent: Agent;
   private costTracker: CostTracker;
+  private providerManager?: ProviderManager;
+  private useSmartRouting: boolean;
   private conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>;
   private rl: readline.Interface;
   private isRunning: boolean = false;
+  private currentModel: string;
 
   constructor(options: MastraChatLoopOptions) {
     this.model = options.model;
+    this.useSmartRouting = options.useSmartRouting || false;
+    this.currentModel = this.model;
     this.agent = createChatAgent(this.model);
     this.costTracker = new CostTracker();
     this.conversationHistory = [];
 
+    // Initialize provider manager if using smart routing
+    if (this.useSmartRouting) {
+      this.providerManager = new ProviderManager({
+        strategy: options.strategy || 'balanced',
+        apiKey: process.env.OPENROUTER_API_KEY || configManager.getApiKey(),
+      });
+
+      // Set budget limit if provided
+      if (options.budgetLimit) {
+        this.providerManager.getUsageTracker().setBudgetLimit('daily', options.budgetLimit);
+      }
+    }
+
     this.rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
-      prompt: Display.modelPrompt(this.model),
+      prompt: Display.modelPrompt(this.useSmartRouting ? 'Smart Routing' : this.model),
     });
   }
 
   start(): void {
     this.isRunning = true;
     Display.header('AI Coding Chat with E2B');
-    Display.info(`Model: ${this.model}`);
+
+    if (this.useSmartRouting && this.providerManager) {
+      Display.info(`Smart Routing: Enabled (${this.providerManager.getStrategy()} strategy)`);
+      const budgetConfig = this.providerManager.getUsageTracker().getBudgetConfig();
+      if (budgetConfig.dailyLimit) {
+        const remaining = this.providerManager.getUsageTracker().getBudgetRemaining('daily');
+        Display.info(`Daily Budget: $${budgetConfig.dailyLimit.toFixed(2)} (Remaining: $${remaining?.toFixed(2) || '0.00'})`);
+      }
+    } else {
+      Display.info(`Model: ${this.model}`);
+    }
 
     // Check if E2B is configured
     if (process.env.E2B_API_KEY) {
@@ -109,9 +142,29 @@ export class MastraChatLoop {
       content: userMessage,
     });
 
+    let routingDecision: RoutingDecision | undefined;
     const spinner = ora('Thinking...').start();
 
     try {
+      // If smart routing is enabled, select model dynamically
+      if (this.useSmartRouting && this.providerManager) {
+        routingDecision = this.providerManager.selectModel(
+          userMessage,
+          this.conversationHistory.slice(0, -1),
+        );
+
+        // Update current model and recreate agent if model changed
+        if (this.currentModel !== routingDecision.model) {
+          this.currentModel = routingDecision.model;
+          this.agent = createChatAgent(this.currentModel);
+        }
+
+        // Show routing decision
+        spinner.stop();
+        console.log(chalk.cyan(`💡 ${routingDecision.reason}`));
+        spinner.start('Thinking...');
+      }
+
       // Use Mastra agent with tools
       const result = await this.agent.generate(userMessage, {
         modelSettings: {
@@ -164,7 +217,20 @@ export class MastraChatLoop {
           completionTokens,
           totalTokens,
         };
-        const costInfo = this.costTracker.addUsage(usage, this.model);
+
+        // Log to database if smart routing is enabled
+        if (this.useSmartRouting && this.providerManager && routingDecision) {
+          const cost = this.costTracker.calculateCost(usage, this.currentModel);
+          this.providerManager.getUsageTracker().logUsage(
+            this.currentModel,
+            usage,
+            routingDecision.complexity,
+            cost,
+            true,
+          );
+        }
+
+        const costInfo = this.costTracker.addUsage(usage, this.currentModel);
         Display.usage(costInfo.usage.promptTokens, costInfo.usage.completionTokens, costInfo.cost);
       }
 
@@ -215,6 +281,11 @@ export class MastraChatLoop {
       }
     } catch {
       // Sandbox manager not initialized, nothing to clean up
+    }
+
+    // Cleanup provider manager if using smart routing
+    if (this.providerManager) {
+      this.providerManager.close();
     }
 
     Display.newline();

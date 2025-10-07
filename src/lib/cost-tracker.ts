@@ -16,8 +16,9 @@ export interface ModelPricing {
 }
 
 // Pricing information for common models (cost per 1M tokens)
-const MODEL_PRICING: Record<string, ModelPricing> = {
+export const MODEL_PRICING: Record<string, ModelPricing> = {
   'anthropic/claude-3.5-sonnet': { prompt: 3, completion: 15 },
+  'anthropic/claude-sonnet-4-5': { prompt: 3, completion: 15 },
   'anthropic/claude-3.5-haiku': { prompt: 1, completion: 5 },
   'anthropic/claude-3-opus': { prompt: 15, completion: 75 },
   'openai/gpt-4o': { prompt: 5, completion: 15 },
