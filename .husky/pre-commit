@@ -1,2 +1,8 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Reminder to update Serena memories for significant changes
+echo "💡 Reminder: Update Serena memories for significant architectural changes"
+
 npx lint-staged
 npm test
