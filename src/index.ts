@@ -6,6 +6,9 @@ import { initCommand } from './commands/init.js';
 import { chatCommand, ChatCommandOptions } from './commands/chat.js';
 import { modelsCommand } from './commands/models.js';
 import { helpCommand } from './commands/help.js';
+import { registerIndexCommand } from './commands/index-cmd.js';
+import { registerSearchCommand } from './commands/search.js';
+import { registerScrapeCommand } from './commands/scrape.js';
 import { Display } from './utils/display.js';
 
 const program = new Command();
@@ -55,6 +58,11 @@ program
   .action(() => {
     helpCommand();
   });
+
+// Register RAG commands
+registerIndexCommand(program);
+registerSearchCommand(program);
+registerScrapeCommand(program);
 
 // Default to help if no command provided
 if (!process.argv.slice(2).length) {

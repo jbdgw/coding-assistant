@@ -9,3 +9,6 @@ dist/
 .idea/
 *.tsbuildinfo
 coverage/
+
+# RAG generated content
+scraped-docs/

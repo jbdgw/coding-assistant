@@ -116,26 +116,53 @@ export class MastraChatLoop {
       const result = await this.agent.generate(userMessage, {
         modelSettings: {
           temperature: configManager.get('temperature') || 0.7,
-          maxTokens: configManager.get('maxTokens') || 4000,
         },
         maxSteps: 10, // Allow multiple tool calls
       });
 
       spinner.stop();
       Display.newline();
+
+      // Check if RAG search was used and display sources
+      if (result.steps && result.steps.length > 0) {
+        for (const step of result.steps) {
+          if (
+            step.toolCalls &&
+            step.toolCalls.some((call: any) => call.toolName === 'search_indexed_code')
+          ) {
+            // Find the RAG tool call result
+            const ragCall = step.toolCalls.find(
+              (call: any) => call.toolName === 'search_indexed_code',
+            );
+            if (ragCall && (ragCall as any).result && typeof (ragCall as any).result === 'object') {
+              const ragResult = (ragCall as any).result as { results?: Array<{ filePath: string; score: number }> };
+              if (ragResult.results && ragResult.results.length > 0) {
+                console.log(chalk.dim.italic('📚 Referenced sources:'));
+                for (const source of ragResult.results) {
+                  const score = (source.score * 100).toFixed(1);
+                  console.log(chalk.dim(`   • ${source.filePath} (${score}% match)`));
+                }
+                console.log();
+              }
+            }
+          }
+        }
+      }
+
       console.log(chalk.green('Assistant:'));
       console.log(result.text);
       Display.newline();
 
       // Track token usage if available
       if (result.usage) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const promptTokens = typeof result.usage.promptTokens === 'number' ? result.usage.promptTokens : 0;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const completionTokens = typeof result.usage.completionTokens === 'number' ? result.usage.completionTokens : 0;
+        const usageAny = result.usage as any;
+        const promptTokens = typeof usageAny.promptTokens === 'number' ? usageAny.promptTokens : 0;
+        const completionTokens = typeof usageAny.completionTokens === 'number' ? usageAny.completionTokens : 0;
+        const totalTokens = promptTokens + completionTokens;
         const usage = {
-          promptTokens: promptTokens as number,
-          completionTokens: completionTokens as number,
+          promptTokens,
+          completionTokens,
+          totalTokens,
         };
         const costInfo = this.costTracker.addUsage(usage, this.model);
         Display.usage(costInfo.usage.promptTokens, costInfo.usage.completionTokens, costInfo.cost);

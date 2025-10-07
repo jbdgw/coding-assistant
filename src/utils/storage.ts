@@ -9,6 +9,10 @@ const _configSchema = z.object({
   temperature: z.number().min(0).max(2).default(0.7),
   maxTokens: z.number().positive().default(4000),
   budgetLimit: z.number().positive().optional(),
+  // RAG configuration
+  ollamaBaseUrl: z.string().default('http://localhost:11434'),
+  chromaHost: z.string().default('localhost'),
+  chromaPort: z.number().default(8000),
 });
 
 export type ConfigType = z.infer<typeof _configSchema>;
@@ -42,6 +46,18 @@ class ConfigStore {
         },
         budgetLimit: {
           type: 'number',
+        },
+        ollamaBaseUrl: {
+          type: 'string',
+          default: 'http://localhost:11434',
+        },
+        chromaHost: {
+          type: 'string',
+          default: 'localhost',
+        },
+        chromaPort: {
+          type: 'number',
+          default: 8000,
         },
       },
     });

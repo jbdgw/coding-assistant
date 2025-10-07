@@ -20,10 +20,14 @@ interface E2BAnswers {
   e2bApiKey: string;
 }
 
+interface RAGAnswers {
+  setupRAG: boolean;
+}
+
 export async function initCommand(): Promise<void> {
   Display.header('Initialize AI Coding CLI');
 
-  const answers = await inquirer.prompt<InitAnswers>([
+  const questions = [
     {
       type: 'password',
       name: 'apiKey',
@@ -84,12 +88,23 @@ export async function initCommand(): Promise<void> {
       message: 'Would you like to set up E2B for code execution? (optional)',
       default: false,
     },
-  ]);
+  ] as any;
+  const answers = (await inquirer.prompt(questions)) as InitAnswers;
+
+  // Ask about RAG setup
+  const ragSetup = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'setupRAG',
+      message: 'Would you like to set up RAG for code search? (requires Ollama + ChromaDB)',
+      default: false,
+    },
+  ]) as RAGAnswers;
 
   let budgetLimit: number | undefined;
 
   if (answers.setBudget) {
-    const budgetAnswer = await inquirer.prompt<BudgetAnswers>([
+    const budgetQuestions = [
       {
         type: 'number',
         name: 'budgetLimit',
@@ -102,7 +117,8 @@ export async function initCommand(): Promise<void> {
           return true;
         },
       },
-    ]);
+    ] as any;
+    const budgetAnswer = (await inquirer.prompt(budgetQuestions)) as BudgetAnswers;
     budgetLimit = budgetAnswer.budgetLimit;
   }
 
@@ -114,7 +130,7 @@ export async function initCommand(): Promise<void> {
     Display.info('Get your API key at: https://e2b.dev/dashboard?tab=keys');
     Display.newline();
 
-    const e2bAnswer = await inquirer.prompt<E2BAnswers>([
+    const e2bAnswer = await inquirer.prompt([
       {
         type: 'password',
         name: 'e2bApiKey',
@@ -126,11 +142,21 @@ export async function initCommand(): Promise<void> {
           return true;
         },
       },
-    ]);
+    ]) as E2BAnswers;
 
     if (e2bAnswer.e2bApiKey && e2bAnswer.e2bApiKey.trim().length > 0) {
       e2bApiKey = e2bAnswer.e2bApiKey.trim();
     }
+  }
+
+  if (ragSetup.setupRAG) {
+    Display.newline();
+    Display.info('RAG enables searching your indexed codebases for relevant code examples.');
+    Display.info('Requirements:');
+    Display.info('  1. Ollama running locally (http://localhost:11434)');
+    Display.info('  2. ChromaDB running locally (http://localhost:8000)');
+    Display.info('  3. Crawl4AI (optional, for scraping documentation sites)');
+    Display.newline();
   }
 
   // Validate API key
@@ -174,10 +200,18 @@ export async function initCommand(): Promise<void> {
     } else {
       console.log(`  E2B Code Execution: Not configured`);
     }
+    if (ragSetup.setupRAG) {
+      console.log(`  RAG Code Search: Enabled ✓`);
+    }
     Display.newline();
     Display.info('You can now start chatting with: my-cli chat');
     if (!e2bApiKey) {
       Display.info('To enable code execution later, get an E2B key at: https://e2b.dev/dashboard');
+    }
+    if (ragSetup.setupRAG) {
+      Display.info('Index a codebase with: my-cli index create <directory>');
+      Display.info('Scrape documentation with: my-cli scrape <url>');
+      Display.info('Search with: my-cli search <query>');
     }
     Display.newline();
   } catch (error) {

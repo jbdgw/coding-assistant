@@ -2,10 +2,14 @@ import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { executeCodeTool, writeFileTool, writeMultipleFilesTool, readFileTool, listFilesTool } from '../tools/index.js';
+import { ragSearchTool } from '../tools/rag-search.js';
 
 export function createChatAgent(model: string, memory?: Memory) {
   // Check if E2B is configured
   const hasE2B = !!process.env.E2B_API_KEY;
+
+  // Check if RAG is configured (Ollama + ChromaDB)
+  const hasRAG = !!process.env.OLLAMA_BASE_URL;
 
   const baseInstructions = `You are an expert coding assistant specialized in helping developers write, debug, and improve code.
 
@@ -38,6 +42,23 @@ The sandbox persists during the chat session, so you can build multi-file projec
 
 Note: E2B sandbox is not configured. To enable code execution features, set up E2B_API_KEY in your environment.`;
 
+  const ragInstructions = hasRAG
+    ? `
+- **SEARCHING INDEXED CODEBASES**: You can search through the user's indexed codebases to find relevant code examples and patterns
+- **CODE RETRIEVAL**: When the user asks about patterns, implementations, or examples from their projects, use the search_indexed_code tool
+- **REFERENCE PAST WORK**: Provide examples from the user's own codebase when answering questions
+
+When to use the RAG search:
+- User asks "how did I implement X in my projects?"
+- User wants to find code examples from their past work
+- User asks about patterns or approaches they've used before
+- You need context about the user's codebase to provide better answers
+
+Always cite the source files when showing code from indexed projects.`
+    : `
+
+Note: RAG is not configured. To enable code search features, set up Ollama and ChromaDB, then index a codebase.`;
+
   const codeGuidelines = `
 
 When providing code:
@@ -58,15 +79,20 @@ When helping with debugging:
 
 Always be helpful, clear, and concise in your responses.`;
 
-  const tools = hasE2B
-    ? {
-        execute_code: executeCodeTool,
-        write_file: writeFileTool,
-        write_multiple_files: writeMultipleFilesTool,
-        read_file: readFileTool,
-        list_files: listFilesTool,
-      }
-    : undefined;
+  // Build tools object conditionally
+  const tools: Record<string, any> = {};
+
+  if (hasE2B) {
+    tools.execute_code = executeCodeTool;
+    tools.write_file = writeFileTool;
+    tools.write_multiple_files = writeMultipleFilesTool;
+    tools.read_file = readFileTool;
+    tools.list_files = listFilesTool;
+  }
+
+  if (hasRAG) {
+    tools.search_indexed_code = ragSearchTool;
+  }
 
   // Create OpenRouter provider
   const openrouter = createOpenRouter({
@@ -75,9 +101,9 @@ Always be helpful, clear, and concise in your responses.`;
 
   return new Agent({
     name: 'Coding Assistant',
-    instructions: baseInstructions + e2bInstructions + codeGuidelines,
+    instructions: baseInstructions + e2bInstructions + ragInstructions + codeGuidelines,
     model: openrouter(model), // Use OpenRouter with the model ID
     memory,
-    tools,
+    tools: Object.keys(tools).length > 0 ? tools : undefined,
   });
 }

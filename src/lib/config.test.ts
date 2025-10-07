@@ -96,6 +96,9 @@ describe('ConfigManager', () => {
         defaultModel: 'test-model',
         temperature: 0.7,
         maxTokens: 4000,
+        ollamaBaseUrl: 'http://localhost:11434',
+        chromaHost: 'localhost',
+        chromaPort: 8000,
       };
       vi.mocked(configStore.getAll).mockReturnValue(mockConfig);
 

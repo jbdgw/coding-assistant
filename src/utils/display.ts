@@ -17,7 +17,7 @@ marked.setOptions({
       }
       return chalk.cyan('```\n') + code + chalk.cyan('\n```\n');
     },
-  }),
+  }) as any,
 });
 
 export class Display {

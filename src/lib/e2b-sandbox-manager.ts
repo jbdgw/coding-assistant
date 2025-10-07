@@ -315,8 +315,8 @@ export class E2BSandboxManager {
       return {
         sandboxId: info.sandboxId,
         templateId: info.templateId,
-        startedAt: info.startedAt,
-        endAt: info.endAt,
+        startedAt: info.startedAt instanceof Date ? info.startedAt.toISOString() : info.startedAt,
+        endAt: info.endAt instanceof Date ? info.endAt.toISOString() : info.endAt,
       };
     } catch {
       return {};
