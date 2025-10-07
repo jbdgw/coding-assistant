@@ -11,8 +11,8 @@ export interface CostInfo {
 }
 
 export interface ModelPricing {
-  prompt: number;  // Cost per 1M tokens
-  completion: number;  // Cost per 1M tokens
+  prompt: number; // Cost per 1M tokens
+  completion: number; // Cost per 1M tokens
 }
 
 // Pricing information for common models (cost per 1M tokens)

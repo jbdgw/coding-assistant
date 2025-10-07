@@ -3,10 +3,22 @@ import ora from 'ora';
 import { configManager } from '../lib/config.js';
 import { Display } from '../utils/display.js';
 
+interface InitAnswers {
+  apiKey: string;
+  defaultModel: string;
+  temperature: number;
+  maxTokens: number;
+  setBudget: boolean;
+}
+
+interface BudgetAnswers {
+  budgetLimit: number;
+}
+
 export async function initCommand(): Promise<void> {
   Display.header('Initialize AI Coding CLI');
 
-  const answers = await inquirer.prompt([
+  const answers = await inquirer.prompt<InitAnswers>([
     {
       type: 'password',
       name: 'apiKey',
@@ -66,7 +78,7 @@ export async function initCommand(): Promise<void> {
   let budgetLimit: number | undefined;
 
   if (answers.setBudget) {
-    const budgetAnswer = await inquirer.prompt([
+    const budgetAnswer = await inquirer.prompt<BudgetAnswers>([
       {
         type: 'number',
         name: 'budgetLimit',

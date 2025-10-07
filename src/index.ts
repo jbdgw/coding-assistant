@@ -2,17 +2,14 @@
 
 import { Command } from 'commander';
 import { initCommand } from './commands/init.js';
-import { chatCommand } from './commands/chat.js';
+import { chatCommand, ChatCommandOptions } from './commands/chat.js';
 import { modelsCommand } from './commands/models.js';
 import { helpCommand } from './commands/help.js';
 import { Display } from './utils/display.js';
 
 const program = new Command();
 
-program
-  .name('my-cli')
-  .description('Personal AI coding CLI tool using Mastra AI and OpenRouter')
-  .version('0.1.0');
+program.name('my-cli').description('Personal AI coding CLI tool using Mastra AI and OpenRouter').version('0.1.0');
 
 program
   .command('init')
@@ -30,9 +27,9 @@ program
   .command('chat')
   .description('Start an interactive chat session')
   .option('-m, --model <model>', 'Model to use for this session')
-  .action(async (options) => {
+  .action((options: ChatCommandOptions) => {
     try {
-      await chatCommand(options);
+      chatCommand(options);
     } catch (error) {
       Display.error(`Chat failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       process.exit(1);

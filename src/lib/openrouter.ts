@@ -58,7 +58,7 @@ export class OpenRouterClient {
     this.client = axios.create({
       baseURL: 'https://openrouter.ai/api/v1',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://github.com/your-username/ai-coding-cli',
         'X-Title': 'AI Coding CLI',
@@ -104,7 +104,8 @@ export class OpenRouterClient {
       return { content, usage };
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        const errorMsg = error.response?.data?.error?.message || error.message;
+        const errorData = error.response?.data as { error?: { message?: string } } | undefined;
+        const errorMsg = errorData?.error?.message || error.message;
         throw new Error(`OpenRouter API error: ${errorMsg}`);
       }
       throw error;
@@ -143,7 +144,7 @@ export class OpenRouterClient {
       promptTokens = Math.ceil(totalMessageLength / 4);
 
       const generator = async function* () {
-        for await (const chunk of response.data) {
+        for await (const chunk of response.data as AsyncIterable<Buffer>) {
           buffer += chunk.toString();
           const lines = buffer.split('\n');
           buffer = lines.pop() || '';
@@ -156,13 +157,13 @@ export class OpenRouterClient {
             if (trimmed.startsWith('data: ')) {
               const jsonStr = trimmed.slice(6);
               try {
-                const parsed: OpenRouterStreamChunk = JSON.parse(jsonStr);
+                const parsed = JSON.parse(jsonStr) as OpenRouterStreamChunk;
                 const content = parsed.choices[0]?.delta?.content;
                 if (content) {
                   completionTokens += Math.ceil(content.length / 4);
                   yield content;
                 }
-              } catch (e) {
+              } catch {
                 // Skip invalid JSON
                 continue;
               }
@@ -180,7 +181,7 @@ export class OpenRouterClient {
       return { stream: generator(), getUsage };
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        const errorMsg = error.response?.data?.error?.message || error.message;
+        const errorMsg = (error.response?.data as { error?: { message?: string } })?.error?.message || error.message;
         throw new Error(`OpenRouter streaming error: ${errorMsg}`);
       }
       throw error;

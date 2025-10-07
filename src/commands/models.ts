@@ -20,14 +20,17 @@ export async function modelsCommand(): Promise<void> {
     spinner.succeed(`Found ${models.length} models`);
 
     // Group models by provider
-    const modelsByProvider = models.reduce((acc, model) => {
-      const provider = model.id.split('/')[0];
-      if (!acc[provider]) {
-        acc[provider] = [];
-      }
-      acc[provider].push(model);
-      return acc;
-    }, {} as Record<string, typeof models>);
+    const modelsByProvider = models.reduce(
+      (acc, model) => {
+        const provider = model.id.split('/')[0];
+        if (!acc[provider]) {
+          acc[provider] = [];
+        }
+        acc[provider].push(model);
+        return acc;
+      },
+      {} as Record<string, typeof models>
+    );
 
     Display.newline();
     Display.header('Available Models');
@@ -44,9 +47,7 @@ export async function modelsCommand(): Promise<void> {
             console.log(`    ${chalk.gray(model.name)}`);
           }
           console.log(
-            `    ${chalk.gray(
-              `Pricing: $${model.pricing.prompt}/M prompt, $${model.pricing.completion}/M completion`
-            )}`
+            `    ${chalk.gray(`Pricing: $${model.pricing.prompt}/M prompt, $${model.pricing.completion}/M completion`)}`
           );
           console.log();
         });

@@ -7,7 +7,7 @@ export interface ChatCommandOptions {
   model?: string;
 }
 
-export async function chatCommand(options: ChatCommandOptions): Promise<void> {
+export function chatCommand(options: ChatCommandOptions): void {
   // Check if API key is configured
   if (!configManager.hasApiKey()) {
     Display.error('API key not configured. Please run: my-cli init');
@@ -26,5 +26,5 @@ export async function chatCommand(options: ChatCommandOptions): Promise<void> {
     openRouterClient: client,
   });
 
-  await chatLoop.start();
+  chatLoop.start();
 }

@@ -2,7 +2,7 @@ import Conf from 'conf';
 import { z } from 'zod';
 
 // Configuration schema
-const configSchema = z.object({
+const _configSchema = z.object({
   openrouterApiKey: z.string().optional(),
   defaultModel: z.string().default('anthropic/claude-3.5-sonnet'),
   temperature: z.number().min(0).max(2).default(0.7),
@@ -10,7 +10,7 @@ const configSchema = z.object({
   budgetLimit: z.number().positive().optional(),
 });
 
-export type ConfigType = z.infer<typeof configSchema>;
+export type ConfigType = z.infer<typeof _configSchema>;
 
 class ConfigStore {
   private store: Conf<ConfigType>;

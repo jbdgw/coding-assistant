@@ -32,7 +32,7 @@ export class ChatLoop {
     });
   }
 
-  async start(): Promise<void> {
+  start(): void {
     this.isRunning = true;
     Display.header('AI Coding Chat');
     Display.info(`Model: ${this.model}`);
@@ -41,7 +41,7 @@ export class ChatLoop {
 
     this.rl.prompt();
 
-    this.rl.on('line', async (input: string) => {
+    this.rl.on('line', (input: string) => {
       const trimmed = input.trim();
 
       if (!trimmed) {
@@ -51,14 +51,16 @@ export class ChatLoop {
 
       // Handle slash commands
       if (trimmed.startsWith('/')) {
-        await this.handleCommand(trimmed);
-        this.rl.prompt();
+        void this.handleCommand(trimmed).then(() => {
+          this.rl.prompt();
+        });
         return;
       }
 
       // Regular message
-      await this.handleMessage(trimmed);
-      this.rl.prompt();
+      void this.handleMessage(trimmed).then(() => {
+        this.rl.prompt();
+      });
     });
 
     this.rl.on('close', () => {
@@ -191,8 +193,8 @@ export class ChatLoop {
       spinner.stop();
 
       // Show popular models first
-      const popularModels = models.filter(m =>
-        m.id.includes('claude') || m.id.includes('gpt-4') || m.id.includes('gemini')
+      const popularModels = models.filter(
+        m => m.id.includes('claude') || m.id.includes('gpt-4') || m.id.includes('gemini')
       );
 
       Display.modelList(popularModels.slice(0, 10));

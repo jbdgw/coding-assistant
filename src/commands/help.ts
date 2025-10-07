@@ -21,9 +21,7 @@ export function helpCommand(): void {
       name: 'chat',
       description: 'Start an interactive chat session',
       usage: 'my-cli chat [--model <model-name>]',
-      options: [
-        { flag: '--model <model-name>', desc: 'Use a specific model for this session' },
-      ],
+      options: [{ flag: '--model <model-name>', desc: 'Use a specific model for this session' }],
     },
     {
       name: 'models',

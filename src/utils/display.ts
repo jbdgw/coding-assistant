@@ -11,7 +11,7 @@ marked.setOptions({
         try {
           const highlighted = hljs.highlight(code, { language: lang }).value;
           return chalk.cyan('```' + lang + '\n') + highlighted + chalk.cyan('\n```\n');
-        } catch (e) {
+        } catch {
           return chalk.cyan('```\n') + code + chalk.cyan('\n```\n');
         }
       }
@@ -67,9 +67,7 @@ export class Display {
   }
 
   static usage(promptTokens: number, completionTokens: number, cost: number): void {
-    const usageStr = chalk.gray(
-      `Tokens: ${promptTokens} in, ${completionTokens} out | Cost: $${cost.toFixed(4)}`
-    );
+    const usageStr = chalk.gray(`Tokens: ${promptTokens} in, ${completionTokens} out | Cost: $${cost.toFixed(4)}`);
     console.log(usageStr);
   }
 
