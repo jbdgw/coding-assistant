@@ -13,11 +13,14 @@ const _configSchema = z.object({
   ollamaBaseUrl: z.string().default('http://localhost:11434'),
   chromaHost: z.string().default('localhost'),
   chromaPort: z.number().default(8000),
+  // Mode configuration
+  currentMode: z.string().optional(),
+  customModes: z.record(z.unknown()).optional(),
 });
 
 export type ConfigType = z.infer<typeof _configSchema>;
 
-class ConfigStore {
+export class ConfigStore {
   private store: Conf<ConfigType>;
 
   constructor() {
@@ -58,6 +61,12 @@ class ConfigStore {
         chromaPort: {
           type: 'number',
           default: 8000,
+        },
+        currentMode: {
+          type: 'string',
+        },
+        customModes: {
+          type: 'object',
         },
       },
     });

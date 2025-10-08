@@ -32,11 +32,12 @@ export interface AnalysisResult {
  */
 export class CodeAnalyzer {
   private eslint: ESLint;
+  private cwd: string;
 
   constructor(cwd: string = process.cwd()) {
+    this.cwd = cwd;
     this.eslint = new ESLint({
       cwd,
-      useEslintrc: true, // Use project's ESLint config
       fix: false, // Don't auto-fix by default
     });
   }
@@ -88,10 +89,8 @@ export class CodeAnalyzer {
    * Auto-fix issues that can be automatically fixed
    */
   async fix(patterns: string[]): Promise<number> {
-    const eslintOptions = this.eslint.options as { cwd?: string };
     const eslintWithFix = new ESLint({
-      cwd: eslintOptions.cwd,
-      useEslintrc: true,
+      cwd: this.cwd,
       fix: true,
     });
 

@@ -5,7 +5,7 @@ import importPlugin from 'eslint-plugin-import';
 
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**', 'examples/**', '*.config.js', '*.config.ts'],
+    ignores: ['dist/**', 'node_modules/**', 'coverage/**', 'examples/**', '*.config.js', '*.config.ts', 'test-phase1-*.ts', 'test-files/**'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,

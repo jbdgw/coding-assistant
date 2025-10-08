@@ -123,9 +123,9 @@ export class UsageTracker {
     };
 
     return {
-      dailyLimit: row.daily_limit,
-      weeklyLimit: row.weekly_limit,
-      monthlyLimit: row.monthly_limit,
+      dailyLimit: row.daily_limit ?? undefined,
+      weeklyLimit: row.weekly_limit ?? undefined,
+      monthlyLimit: row.monthly_limit ?? undefined,
       updatedAt: row.updated_at ? new Date(row.updated_at) : undefined,
     };
   }
@@ -214,7 +214,7 @@ export class UsageTracker {
       completionTokens: row.completion_tokens,
       totalTokens: row.total_tokens,
       cost: row.cost,
-      taskComplexity: row.task_complexity,
+      taskComplexity: row.task_complexity as TaskComplexity,
       sessionId: row.session_id,
       success: row.success === 1,
     }));
@@ -246,7 +246,7 @@ export class UsageTracker {
       timestamp: new Date(row.timestamp),
       model: row.model,
       errorMessage: row.error_message,
-      fallbackModel: row.fallback_model,
+      fallbackModel: row.fallback_model ?? undefined,
       fallbackSucceeded: row.fallback_succeeded === 1,
     }));
   }

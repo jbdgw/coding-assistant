@@ -6,7 +6,8 @@ type HookType = keyof PluginHooks;
  * Hook system for managing plugin event hooks
  */
 export class HookSystem {
-  private hooks: Map<HookType, PluginHooks[HookType][]> = new Map();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private hooks: Map<HookType, any[]> = new Map();
 
   /**
    * Register a hook from a plugin
@@ -17,8 +18,7 @@ export class HookSystem {
     }
 
     const handlers = this.hooks.get(hookType)!;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    handlers.push(handler as any);
+    handlers.push(handler);
   }
 
   /**
@@ -36,7 +36,7 @@ export class HookSystem {
    * Execute before-commit hooks
    */
   async executeBeforeCommit(): Promise<void> {
-    const handlers = this.hooks.get('before-commit') || [];
+    const handlers = (this.hooks.get('before-commit') || []) as (() => Promise<void>)[];
 
     for (const handler of handlers) {
       if (handler) {
@@ -54,7 +54,7 @@ export class HookSystem {
    * Execute after-test hooks
    */
   async executeAfterTest(results: TestResults): Promise<void> {
-    const handlers = this.hooks.get('after-test') || [];
+    const handlers = (this.hooks.get('after-test') || []) as ((results: TestResults) => Promise<void>)[];
 
     for (const handler of handlers) {
       if (handler) {
@@ -73,7 +73,7 @@ export class HookSystem {
    * Returns the transformed message
    */
   async executeBeforeChat(message: string): Promise<string> {
-    const handlers = this.hooks.get('before-chat') || [];
+    const handlers = (this.hooks.get('before-chat') || []) as ((message: string) => Promise<string>)[];
     let transformedMessage = message;
 
     for (const handler of handlers) {
@@ -95,7 +95,7 @@ export class HookSystem {
    * Returns the transformed response
    */
   async executeAfterResponse(response: string): Promise<string> {
-    const handlers = this.hooks.get('after-response') || [];
+    const handlers = (this.hooks.get('after-response') || []) as ((response: string) => Promise<string>)[];
     let transformedResponse = response;
 
     for (const handler of handlers) {
@@ -116,7 +116,7 @@ export class HookSystem {
    * Execute on-error hooks
    */
   async executeOnError(error: Error): Promise<void> {
-    const handlers = this.hooks.get('on-error') || [];
+    const handlers = (this.hooks.get('on-error') || []) as ((error: Error) => Promise<void>)[];
 
     for (const handler of handlers) {
       if (handler) {

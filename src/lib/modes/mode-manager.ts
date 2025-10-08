@@ -1,6 +1,6 @@
 import { AgentMode, ModeConfig } from '../../types/mode.js';
 import { MODE_PRESETS, getModeConfig } from '../../config/mode-presets.js';
-import { ConfigStore } from '../config.js';
+import { ConfigStore } from '../../utils/storage.js';
 
 /**
  * Mode manager for handling agent mode configurations
