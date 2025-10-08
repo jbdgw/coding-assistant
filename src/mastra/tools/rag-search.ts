@@ -15,23 +15,15 @@ export const ragSearchTool = createTool({
     query: z
       .string()
       .describe(
-        'The search query. Describe what code or pattern you are looking for. Be specific about the programming language, framework, or concepts.',
+        'The search query. Describe what code or pattern you are looking for. Be specific about the programming language, framework, or concepts.'
       ),
     collection: z
       .string()
       .optional()
       .default('default')
       .describe('The name of the collection to search. Use "default" if not specified.'),
-    topK: z
-      .number()
-      .optional()
-      .default(5)
-      .describe('Number of results to return (default: 5, max: 20)'),
-    minScore: z
-      .number()
-      .optional()
-      .default(0.6)
-      .describe('Minimum similarity score threshold (0-1, default: 0.6)'),
+    topK: z.number().optional().default(5).describe('Number of results to return (default: 5, max: 20)'),
+    minScore: z.number().optional().default(0.6).describe('Minimum similarity score threshold (0-1, default: 0.6)'),
   }),
   outputSchema: z.object({
     results: z.array(
@@ -40,7 +32,7 @@ export const ragSearchTool = createTool({
         language: z.string().describe('Programming language'),
         code: z.string().describe('The code snippet'),
         score: z.number().describe('Similarity score (0-1)'),
-      }),
+      })
     ),
     context: z.string().describe('Formatted context string for LLM consumption'),
     message: z.string().describe('Human-readable message'),
@@ -78,7 +70,7 @@ export const ragSearchTool = createTool({
       }
 
       // Format results
-      const formattedResults = results.map((r) => ({
+      const formattedResults = results.map(r => ({
         filePath: r.metadata.filePath,
         language: r.metadata.language || 'unknown',
         code: r.metadata.text,

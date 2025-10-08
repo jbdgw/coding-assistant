@@ -14,7 +14,7 @@ export function sessionsCommand() {
     .option('-l, --limit <number>', 'Number of sessions to show', '20')
     .option('-s, --search <query>', 'Search sessions by title or content')
     .option('-t, --tags <tags>', 'Filter by tags (comma-separated)')
-    .action(async (options) => {
+    .action(async options => {
       const sessionManager = new SessionManager();
 
       try {
@@ -46,11 +46,13 @@ export function sessionsCommand() {
 
           console.log(`${statusIcon} ${chalk.bold(session.id)} - ${title}`);
           console.log(
-            chalk.dim(`   ${startedAt} | ${messageCount} | ${cost}` + (isActive ? chalk.green(' [Active]') : '')),
+            chalk.dim(`   ${startedAt} | ${messageCount} | ${cost}` + (isActive ? chalk.green(' [Active]') : ''))
           );
 
           if (session.summary) {
-            console.log(chalk.dim(`   ${session.summary.substring(0, 100)}${session.summary.length > 100 ? '...' : ''}`));
+            console.log(
+              chalk.dim(`   ${session.summary.substring(0, 100)}${session.summary.length > 100 ? '...' : ''}`)
+            );
           }
 
           if (session.tags && session.tags.length > 0) {

@@ -2,13 +2,41 @@
 
 ## Core Dependencies
 
+### AI Framework
+- **Mastra AI**: latest - Agent framework with memory and streaming support
+  - `@mastra/core`: Core agent functionality with tools and workflows
+  - `@mastra/loggers`: PinoLogger for structured logging
+  - `@mastra/memory`: Memory management with conversation history and working memory
+  - `@mastra/libsql`: LibSQL storage adapter for Mastra Memory
+  - `@mastra/mcp`: v0.13.4 - Model Context Protocol client for external tools
+  - `@mastra/chroma`: ChromaDB integration for vector storage
+  - `@mastra/rag`: Retrieval Augmented Generation with document processing
+
+### AI SDK & Providers
+- **Vercel AI SDK**: latest - Unified AI SDK for streaming and tool calling
+  - `ai`: Core AI SDK package
+  - `@ai-sdk/openai`: OpenAI provider (for embeddings)
+  - `@openrouter/ai-sdk-provider`: OpenRouter integration for multi-model access
+
+### Runtime & Language
 - **TypeScript**: v5.8.3 - Type-safe development with strict mode enabled
 - **Node.js**: >=20.0.0 - Runtime requirement
-- **Mastra AI**: latest - Agent framework with memory and streaming support
-  - `@mastra/core`: Core agent functionality
-  - `@mastra/loggers`: PinoLogger for logging
-  - `@mastra/memory`: Memory management for agents
-- **OpenRouter**: Unified API for 200+ AI models (via axios HTTP client)
+
+## Storage & Database
+
+- **better-sqlite3**: v12.4.1 - Synchronous SQLite3 with better performance
+  - `@types/better-sqlite3`: v7.6.13 - Type definitions
+  - Used for: usage.db (sessions, preferences, analytics)
+- **LibSQL**: via @mastra/libsql - Turso/LibSQL for Mastra Memory storage
+  - Used for: memory.db (threads, messages, working memory)
+- **ChromaDB**: via @mastra/chroma - Vector database for RAG
+  - Used for: Code embeddings and semantic search
+
+## Code Execution
+
+- **E2B Code Interpreter**: latest - Sandboxed code execution environments
+  - `@e2b/code-interpreter`: Python, JavaScript, TypeScript execution
+  - Features: File operations, persistent sandboxes, timeout controls
 
 ## CLI Framework
 
@@ -27,7 +55,8 @@
 
 - **Zod**: v3.23.8 - TypeScript-first schema validation
 - **Conf**: v13.0.1 - Secure configuration storage
-- **Axios**: v1.7.2 - HTTP client for OpenRouter API
+- **Axios**: v1.7.2 - HTTP client for API requests
+- **nanoid**: Custom alphabet for session ID generation
 
 ## Build Tools
 
@@ -70,6 +99,7 @@
 - `@types/node`: v20.17.57 - Node.js type definitions
 - `@types/inquirer`: v9.0.7 - Inquirer type definitions
 - `@types/marked-terminal`: v3.1.3 - Marked-terminal type definitions
+- `@types/better-sqlite3`: v7.6.13 - SQLite type definitions
 
 ## Module System
 
@@ -142,12 +172,75 @@
 - `.github/workflows/` - GitHub Actions workflows
 - `.husky/` - Git hooks
 
-## External APIs
+## External APIs & Services
 
-- **OpenRouter API**: https://openrouter.ai/api/v1
-  - Authentication: Bearer token
-  - Endpoints:
-    - `/models` - List available models
-    - `/chat/completions` - Chat completion (streaming and non-streaming)
-  - Response format: OpenAI-compatible
-  - SSE streaming support
+### OpenRouter API
+- **Base URL**: https://openrouter.ai/api/v1
+- **Authentication**: Bearer token (OPENROUTER_API_KEY)
+- **Endpoints**:
+  - `/models` - List available models
+  - `/chat/completions` - Chat completion (streaming and non-streaming)
+- **Response format**: OpenAI-compatible
+- **Features**: 200+ models, SSE streaming support
+
+### E2B API
+- **Base URL**: https://api.e2b.dev
+- **Authentication**: E2B_API_KEY
+- **Features**:
+  - Code execution sandboxes (Python, JavaScript, TypeScript)
+  - File operations (read, write, list)
+  - Persistent sandboxes during session
+  - Automatic cleanup
+
+### OpenAI API (Optional)
+- **Purpose**: Embeddings for semantic search in memory
+- **Authentication**: OPENAI_API_KEY
+- **Model**: text-embedding-3-small
+- **Used for**:
+  - Semantic recall across conversation history
+  - Vector search in working memory
+  - Falls back gracefully if not configured
+
+### MCP Servers (Model Context Protocol)
+- **Mastra Documentation Server**: @mastra/mcp-docs-server@latest
+  - **Transport**: npx command execution
+  - **Tools**: mastraDocs, mastraExamples, mastraChanges
+  - **Purpose**: Access Mastra documentation and examples
+
+### ChromaDB (for RAG)
+- **Base URL**: http://localhost:8000 (default)
+- **Purpose**: Vector database for codebase embeddings
+- **Configuration**: CHROMA_HOST, CHROMA_PORT
+- **Used for**: Semantic code search across indexed projects
+
+### Ollama (Optional for RAG)
+- **Base URL**: Configurable (OLLAMA_BASE_URL)
+- **Purpose**: Local embeddings for RAG system
+- **Used for**: Indexing and searching local codebases
+
+## Database Files
+
+### usage.db (SQLite)
+**Location**: ~/.config/ai-coding-cli-nodejs/usage.db
+**Tables**:
+- `model_usage`: Model usage tracking with token counts
+- `sessions`: Chat session metadata
+- `user_preferences`: Stored user preferences with confidence scores
+- `learnings`: AI insights about user patterns
+- `projects`: User project information
+- `common_patterns`: Frequently used code patterns
+
+### memory.db (LibSQL)
+**Location**: ~/.config/ai-coding-cli-nodejs/memory.db
+**Managed by**: @mastra/memory
+**Tables**:
+- `threads`: Conversation threads
+- `messages`: Thread messages with role/content
+- `working_memory`: Resource-scoped persistent memory
+- `vectors`: Embeddings for semantic search (if OpenAI key configured)
+
+### chroma/ (ChromaDB)
+**Location**: ./chroma/
+**Managed by**: @mastra/chroma
+**Collections**: One per indexed codebase
+**Content**: Code embeddings with metadata

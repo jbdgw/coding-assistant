@@ -28,8 +28,7 @@ export function statsCommand(_options: StatsCommandOptions = {}): void {
     // Display overall summary
     const totalCost = modelStats.reduce((sum, stat) => sum + stat.totalCost, 0);
     const totalCalls = modelStats.reduce((sum, stat) => sum + stat.totalCalls, 0);
-    const avgSuccessRate =
-      modelStats.reduce((sum, stat) => sum + stat.successRate, 0) / modelStats.length;
+    const avgSuccessRate = modelStats.reduce((sum, stat) => sum + stat.successRate, 0) / modelStats.length;
 
     console.log(chalk.bold('\n📊 Overall Summary'));
     console.log(`Total API Calls: ${chalk.cyan(totalCalls)}`);
@@ -53,7 +52,7 @@ export function statsCommand(_options: StatsCommandOptions = {}): void {
     console.log('─'.repeat(headerRow.length));
 
     // Print rows
-    modelStats.forEach((stat) => {
+    modelStats.forEach(stat => {
       const row = [
         stat.model.padEnd(colWidths[0]),
         stat.totalCalls.toString().padEnd(colWidths[1]),
@@ -88,7 +87,7 @@ export function statsCommand(_options: StatsCommandOptions = {}): void {
         const statusColor = percentage > 90 ? chalk.red : percentage > 70 ? chalk.yellow : chalk.green;
 
         console.log(
-          `${name}: ${statusColor(`$${used.toFixed(2)}`)} / $${limit.toFixed(2)} (${statusColor(percentage.toFixed(1) + '%')})`,
+          `${name}: ${statusColor(`$${used.toFixed(2)}`)} / $${limit.toFixed(2)} (${statusColor(percentage.toFixed(1) + '%')})`
         );
       }
     }

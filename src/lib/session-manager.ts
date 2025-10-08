@@ -185,7 +185,7 @@ export class SessionManager {
       // Search for tags in JSON array
       const tagConditions = tags.map(() => 'tags LIKE ?');
       conditions.push(`(${tagConditions.join(' OR ')})`);
-      tags.forEach((tag) => values.push(`%"${tag}"%`));
+      tags.forEach(tag => values.push(`%"${tag}"%`));
     }
 
     if (conditions.length > 0) {
@@ -198,7 +198,7 @@ export class SessionManager {
     const stmt = this.db.prepare(query);
     const rows = stmt.all(...values) as SessionRow[];
 
-    return rows.map((row) => this.rowToSession(row));
+    return rows.map(row => this.rowToSession(row));
   }
 
   /**
@@ -218,7 +218,7 @@ export class SessionManager {
     if (options.tags && options.tags.length > 0) {
       const tagConditions = options.tags.map(() => 'tags LIKE ?');
       conditions.push(`(${tagConditions.join(' OR ')})`);
-      options.tags.forEach((tag) => values.push(`%"${tag}"%`));
+      options.tags.forEach(tag => values.push(`%"${tag}"%`));
     }
 
     if (conditions.length > 0) {

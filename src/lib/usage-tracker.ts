@@ -4,14 +4,7 @@
 
 import Database from 'better-sqlite3';
 import { initializeDatabase } from './storage/usage-db.js';
-import type {
-  TokenUsage,
-  UsageLog,
-  FailureLog,
-  BudgetConfig,
-  ModelStats,
-  TaskComplexity,
-} from '../types/routing.js';
+import type { TokenUsage, UsageLog, FailureLog, BudgetConfig, ModelStats, TaskComplexity } from '../types/routing.js';
 
 export class UsageTracker {
   private db: Database.Database;
@@ -25,13 +18,7 @@ export class UsageTracker {
   /**
    * Log successful usage
    */
-  logUsage(
-    model: string,
-    usage: TokenUsage,
-    complexity: TaskComplexity,
-    cost: number,
-    success: boolean = true,
-  ): void {
+  logUsage(model: string, usage: TokenUsage, complexity: TaskComplexity, cost: number, success: boolean = true): void {
     const stmt = this.db.prepare(`
       INSERT INTO usage_logs (model, prompt_tokens, completion_tokens, total_tokens, cost, task_complexity, session_id, success)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -45,19 +32,14 @@ export class UsageTracker {
       cost,
       complexity,
       this.sessionId,
-      success ? 1 : 0,
+      success ? 1 : 0
     );
   }
 
   /**
    * Log model failure
    */
-  logFailure(
-    model: string,
-    errorMessage: string,
-    fallbackModel?: string,
-    fallbackSucceeded: boolean = false,
-  ): void {
+  logFailure(model: string, errorMessage: string, fallbackModel?: string, fallbackSucceeded: boolean = false): void {
     const stmt = this.db.prepare(`
       INSERT INTO failure_logs (model, error_message, fallback_model, fallback_succeeded)
       VALUES (?, ?, ?, ?)
@@ -133,7 +115,12 @@ export class UsageTracker {
    */
   getBudgetConfig(): BudgetConfig {
     const stmt = this.db.prepare('SELECT * FROM budget_config WHERE id = 1');
-    const row = stmt.get() as any;
+    const row = stmt.get() as {
+      daily_limit: number | null;
+      weekly_limit: number | null;
+      monthly_limit: number | null;
+      updated_at: string;
+    };
 
     return {
       dailyLimit: row.daily_limit,
@@ -172,9 +159,17 @@ export class UsageTracker {
       ORDER BY total_calls DESC
     `);
 
-    const rows = stmt.all() as any[];
+    interface ModelStatsRow {
+      model: string;
+      total_calls: number;
+      success_rate: number;
+      avg_cost: number;
+      total_cost: number;
+    }
 
-    return rows.map((row) => ({
+    const rows = stmt.all() as ModelStatsRow[];
+
+    return rows.map(row => ({
       model: row.model,
       totalCalls: row.total_calls,
       successRate: row.success_rate,
@@ -187,18 +182,31 @@ export class UsageTracker {
    * Get usage history
    */
   getUsageHistory(limit: number = 100, fromDate?: Date): UsageLog[] {
-    let query = `
+    const query = `
       SELECT * FROM usage_logs
       ${fromDate ? 'WHERE timestamp >= ?' : ''}
       ORDER BY timestamp DESC
       LIMIT ?
     `;
 
+    interface UsageLogRow {
+      id: number;
+      timestamp: string;
+      model: string;
+      prompt_tokens: number;
+      completion_tokens: number;
+      total_tokens: number;
+      cost: number;
+      task_complexity: string;
+      session_id: string;
+      success: number;
+    }
+
     const stmt = this.db.prepare(query);
     const params = fromDate ? [fromDate.toISOString(), limit] : [limit];
-    const rows = stmt.all(...params) as any[];
+    const rows = stmt.all(...params) as UsageLogRow[];
 
-    return rows.map((row) => ({
+    return rows.map(row => ({
       id: row.id,
       timestamp: new Date(row.timestamp),
       model: row.model,
@@ -222,9 +230,18 @@ export class UsageTracker {
       LIMIT ?
     `);
 
-    const rows = stmt.all(limit) as any[];
+    interface FailureLogRow {
+      id: number;
+      timestamp: string;
+      model: string;
+      error_message: string;
+      fallback_model: string | null;
+      fallback_succeeded: number;
+    }
 
-    return rows.map((row) => ({
+    const rows = stmt.all(limit) as FailureLogRow[];
+
+    return rows.map(row => ({
       id: row.id,
       timestamp: new Date(row.timestamp),
       model: row.model,

@@ -19,11 +19,7 @@ export class CodebaseRetrieval {
   private vectorStore: VectorStore;
   private config: Required<RetrievalConfig>;
 
-  constructor(
-    config: RetrievalConfig,
-    embeddings?: OllamaEmbeddingsService,
-    vectorStore?: VectorStore,
-  ) {
+  constructor(config: RetrievalConfig, embeddings?: OllamaEmbeddingsService, vectorStore?: VectorStore) {
     this.config = {
       collectionName: config.collectionName,
       topK: config.topK || 10,
@@ -43,7 +39,7 @@ export class CodebaseRetrieval {
       topK?: number;
       filter?: Record<string, any>;
       minScore?: number;
-    } = {},
+    } = {}
   ): Promise<RetrievalResult[]> {
     // Generate embedding for query
     const queryVector = await this.embeddings.embed(query);
@@ -56,10 +52,10 @@ export class CodebaseRetrieval {
 
     // Filter by minimum score
     const minScore = options.minScore ?? this.config.minScore;
-    const filtered = results.filter((result) => result.score >= minScore);
+    const filtered = results.filter(result => result.score >= minScore);
 
     // Format results
-    return filtered.map((result) => ({
+    return filtered.map(result => ({
       ...result,
       formattedSource: this.formatSource(result),
     }));
@@ -74,7 +70,7 @@ export class CodebaseRetrieval {
       topK?: number;
       filter?: Record<string, any>;
       minScore?: number;
-    } = {},
+    } = {}
   ): Promise<string> {
     const results = await this.retrieve(query, options);
 

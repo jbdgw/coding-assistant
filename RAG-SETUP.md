@@ -7,21 +7,25 @@ This CLI includes RAG capabilities for semantic code search and retrieval. Here'
 ### 1. Ollama (for embeddings)
 
 **Install Ollama:**
+
 ```bash
 brew install ollama
 ```
 
 **Start Ollama:**
+
 ```bash
 ollama serve
 ```
 
 **Pull the embedding model:**
+
 ```bash
 ollama pull dengcao/Qwen3-Embedding-0.6B:Q8_0
 ```
 
 **Verify:**
+
 ```bash
 ollama list
 # Should show: dengcao/Qwen3-Embedding-0.6B:Q8_0
@@ -30,6 +34,7 @@ ollama list
 ### 2. ChromaDB (vector database)
 
 **Using Docker (recommended):**
+
 ```bash
 # Start ChromaDB
 ./chromadb.sh start
@@ -45,6 +50,7 @@ ollama list
 ```
 
 **Manual Docker command:**
+
 ```bash
 docker run -d --name chromadb -p 8000:8000 chromadb/chroma
 ```
@@ -58,11 +64,13 @@ docker run -d --name chromadb -p 8000:8000 chromadb/chroma
 ✅ **Fast** - async crawling with JavaScript rendering
 
 Install:
+
 ```bash
 ./scripts/setup-crawl4ai.sh
 ```
 
 Or manually:
+
 ```bash
 pip3 install --user --break-system-packages crawl4ai
 ```
@@ -76,6 +84,7 @@ npm run dev -- init
 ```
 
 When prompted about RAG setup:
+
 - Select "Yes" for RAG setup
 - All dependencies are local and free!
   - No API keys required
@@ -101,6 +110,7 @@ node test-rag.mjs
 ```
 
 You should see:
+
 ```
 ✅ Ollama is accessible
 ✅ ChromaDB is accessible
@@ -144,6 +154,7 @@ npm run dev -- chat
 ```
 
 The assistant will automatically:
+
 - Search your indexed codebases for relevant code
 - Show you which files were referenced
 - Provide answers based on your actual code
@@ -171,6 +182,7 @@ npm run dev -- index delete my-project
 ## Supported File Types
 
 ### Without Unstructured.io (works out of the box):
+
 - **Programming Languages**: `.py`, `.js`, `.ts`, `.tsx`, `.jsx`, `.go`, `.rs`, `.java`, `.cpp`, `.c`, `.h`, `.hpp`, `.rb`, `.php`, `.swift`, `.kt`, `.scala`
 - **Web**: `.html`, `.css`, `.scss`, `.sass`, `.less`, `.xml`
 - **Config/Data**: `.json`, `.yml`, `.yaml`, `.toml`, `.ini`, `.env`
@@ -179,16 +191,19 @@ npm run dev -- index delete my-project
 - **Query Languages**: `.sql`, `.graphql`, `.proto`
 
 ### Documentation Websites (with Crawl4AI):
+
 - Any documentation site (auto-converts to markdown)
 - Examples: docs.astro.build, react.dev, vuejs.org, etc.
 
 ### PDFs (with local tools):
+
 - Use `pdf2txt.sh` script for simple conversion
 - See "Working with PDFs" section below
 
 ## Troubleshooting
 
 ### Ollama not accessible
+
 ```bash
 # Check if Ollama is running
 curl http://localhost:11434/api/tags
@@ -198,6 +213,7 @@ ollama serve
 ```
 
 ### ChromaDB not accessible
+
 ```bash
 # Check status
 ./chromadb.sh status
@@ -210,6 +226,7 @@ ollama serve
 ```
 
 ### Embeddings failing
+
 ```bash
 # Verify model is downloaded
 ollama list
@@ -219,6 +236,7 @@ ollama pull dengcao/Qwen3-Embedding-0.6B:Q8_0
 ```
 
 ### Index creation failing
+
 - Check that both Ollama and ChromaDB are running
 - Verify file permissions on the directory you're indexing
 - Check logs for specific errors
@@ -291,6 +309,7 @@ npm run dev -- scrape https://vuejs.org/guide/ --max-pages 100 --depth 3 --colle
 ```
 
 **Benefits**:
+
 - Automatic HTML → Markdown conversion
 - JavaScript rendering support
 - Respects site structure
@@ -372,16 +391,19 @@ npm run dev -- index create ./docs --collection my-docs
 ## Next Steps
 
 1. **Index your codebase**:
+
    ```bash
    npm run dev -- index create ./src --collection my-project
    ```
 
 2. **Scrape documentation** (if you installed Crawl4AI):
+
    ```bash
    npm run dev -- scrape https://docs.astro.build --collection astro
    ```
 
 3. **Search your knowledge base**:
+
    ```bash
    npm run dev -- search "components" --collection astro
    ```

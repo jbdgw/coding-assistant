@@ -62,7 +62,7 @@ export function recallCommand() {
 
           if (session.summary) {
             console.log(
-              chalk.dim(`   ${session.summary.substring(0, 150)}${session.summary.length > 150 ? '...' : ''}`),
+              chalk.dim(`   ${session.summary.substring(0, 150)}${session.summary.length > 150 ? '...' : ''}`)
             );
           }
 
@@ -141,10 +141,7 @@ async function performSemanticSearch(query: string, limit: number, memory: any) 
 
       for (const message of result.messages.slice(0, 3)) {
         const role = message.role === 'user' ? chalk.blue('User') : chalk.green('Assistant');
-        const content =
-          typeof message.content === 'string'
-            ? message.content
-            : JSON.stringify(message.content);
+        const content = typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
         const preview = content.substring(0, 200) + (content.length > 200 ? '...' : '');
 
         console.log(`${role}: ${chalk.white(preview)}`);

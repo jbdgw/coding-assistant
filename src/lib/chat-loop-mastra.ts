@@ -116,13 +116,13 @@ export class MastraChatLoop {
     const session = this.sessionManager.getSession(this.sessionId)!;
 
     // Prevent unhandled errors from killing the process
-    process.on('uncaughtException', (error) => {
+    process.on('uncaughtException', error => {
       console.error(chalk.red('\n⚠️  Uncaught Exception:'), error);
       Display.info('Chat continues - type your next message or /exit to quit');
       this.rl.prompt();
     });
 
-    process.on('unhandledRejection', (reason) => {
+    process.on('unhandledRejection', reason => {
       console.error(chalk.red('\n⚠️  Unhandled Rejection:'), reason);
       Display.info('Chat continues - type your next message or /exit to quit');
       this.rl.prompt();
@@ -133,7 +133,7 @@ export class MastraChatLoop {
     // Display session info
     if (session.messageCount > 0) {
       Display.info(
-        `📝 Resuming: ${session.title || 'Untitled'} (${session.messageCount} messages, started ${session.startedAt.toLocaleString()})`,
+        `📝 Resuming: ${session.title || 'Untitled'} (${session.messageCount} messages, started ${session.startedAt.toLocaleString()})`
       );
     } else {
       Display.info(`📝 Session: ${session.id}`);
@@ -153,7 +153,7 @@ export class MastraChatLoop {
       if (budgetConfig.dailyLimit) {
         const remaining = this.providerManager.getUsageTracker().getBudgetRemaining('daily');
         Display.info(
-          `Daily Budget: $${budgetConfig.dailyLimit.toFixed(2)} (Remaining: $${remaining?.toFixed(2) || '0.00'})`,
+          `Daily Budget: $${budgetConfig.dailyLimit.toFixed(2)} (Remaining: $${remaining?.toFixed(2) || '0.00'})`
         );
       }
     } else {
@@ -192,7 +192,7 @@ export class MastraChatLoop {
         .then(() => {
           this.rl.prompt();
         })
-        .catch((error) => {
+        .catch(error => {
           console.error(chalk.red('\n⚠️  Error handling message:'), error);
           Display.info('Chat continues - type your next message or /exit to quit');
           this.rl.prompt();
@@ -248,10 +248,7 @@ export class MastraChatLoop {
 
       // If smart routing is enabled, select model dynamically
       if (this.useSmartRouting && this.providerManager) {
-        routingDecision = this.providerManager.selectModel(
-          userMessage,
-          this.conversationHistory.slice(0, -1),
-        );
+        routingDecision = this.providerManager.selectModel(userMessage, this.conversationHistory.slice(0, -1));
 
         // Update current model and recreate agent if model changed
         if (this.currentModel !== routingDecision.model) {
@@ -283,14 +280,9 @@ export class MastraChatLoop {
       // Check if RAG search was used and display sources
       if (result.steps && result.steps.length > 0) {
         for (const step of result.steps) {
-          if (
-            step.toolCalls &&
-            step.toolCalls.some((call: any) => call.toolName === 'search_indexed_code')
-          ) {
+          if (step.toolCalls && step.toolCalls.some((call: any) => call.toolName === 'search_indexed_code')) {
             // Find the RAG tool call result
-            const ragCall = step.toolCalls.find(
-              (call: any) => call.toolName === 'search_indexed_code',
-            );
+            const ragCall = step.toolCalls.find((call: any) => call.toolName === 'search_indexed_code');
             if (ragCall && (ragCall as any).result && typeof (ragCall as any).result === 'object') {
               const ragResult = (ragCall as any).result as { results?: Array<{ filePath: string; score: number }> };
               if (ragResult.results && ragResult.results.length > 0) {
@@ -320,16 +312,8 @@ export class MastraChatLoop {
         const usageAny = result.usage as any;
 
         // Try different property names that AI SDK might use
-        const promptTokens =
-          usageAny.promptTokens ??
-          usageAny.inputTokens ??
-          usageAny.prompt_tokens ??
-          0;
-        const completionTokens =
-          usageAny.completionTokens ??
-          usageAny.outputTokens ??
-          usageAny.completion_tokens ??
-          0;
+        const promptTokens = usageAny.promptTokens ?? usageAny.inputTokens ?? usageAny.prompt_tokens ?? 0;
+        const completionTokens = usageAny.completionTokens ?? usageAny.outputTokens ?? usageAny.completion_tokens ?? 0;
         const totalTokens = promptTokens + completionTokens;
         const usage = {
           promptTokens,
@@ -345,13 +329,9 @@ export class MastraChatLoop {
         // Log to database if smart routing is enabled
         if (this.useSmartRouting && this.providerManager && routingDecision) {
           const cost = this.costTracker.calculateCost(usage, this.currentModel);
-          this.providerManager.getUsageTracker().logUsage(
-            this.currentModel,
-            usage,
-            routingDecision.complexity,
-            cost,
-            true,
-          );
+          this.providerManager
+            .getUsageTracker()
+            .logUsage(this.currentModel, usage, routingDecision.complexity, cost, true);
         }
 
         const costInfo = this.costTracker.addUsage(usage, this.currentModel);

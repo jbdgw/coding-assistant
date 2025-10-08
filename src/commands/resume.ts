@@ -37,9 +37,7 @@ export function resumeCommand() {
 
         chatLoop.start();
       } catch (error) {
-        Display.error(
-          `Failed to resume session: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
+        Display.error(`Failed to resume session: ${error instanceof Error ? error.message : 'Unknown error'}`);
         process.exit(1);
       } finally {
         sessionManager.close();

@@ -16,12 +16,9 @@ export const mastraDocsTool = createTool({
     paths: z
       .array(z.string())
       .describe(
-        'Documentation paths to fetch (e.g., ["memory/", "agents/"]). Common paths: memory/, agents/, workflows/, tools-mcp/, rag/, evals/',
+        'Documentation paths to fetch (e.g., ["memory/", "agents/"]). Common paths: memory/, agents/, workflows/, tools-mcp/, rag/, evals/'
       ),
-    keywords: z
-      .array(z.string())
-      .optional()
-      .describe('Keywords to search for in the documentation'),
+    keywords: z.array(z.string()).optional().describe('Keywords to search for in the documentation'),
   }),
   execute: async ({ context }) => {
     try {
@@ -54,12 +51,9 @@ export const mastraExamplesTool = createTool({
       .string()
       .optional()
       .describe(
-        'Specific example name to fetch. If not provided, lists all available examples. Examples include: memory-with-libsql, agent, workflow-with-memory, etc.',
+        'Specific example name to fetch. If not provided, lists all available examples. Examples include: memory-with-libsql, agent, workflow-with-memory, etc.'
       ),
-    keywords: z
-      .array(z.string())
-      .optional()
-      .describe('Keywords to search for in examples'),
+    keywords: z.array(z.string()).optional().describe('Keywords to search for in examples'),
   }),
   execute: async ({ context }) => {
     try {
@@ -89,7 +83,7 @@ export const refDocsTool = createTool({
     query: z
       .string()
       .describe(
-        'Search query. Should include programming language and framework/library names (e.g., "Next.js 14 app router", "React hooks useEffect")',
+        'Search query. Should include programming language and framework/library names (e.g., "Next.js 14 app router", "React hooks useEffect")'
       ),
   }),
   execute: async ({ context }) => {

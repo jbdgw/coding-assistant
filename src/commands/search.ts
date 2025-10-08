@@ -40,8 +40,8 @@ export async function searchCommand(query: string, options: SearchOptions): Prom
       spinner.stop();
       console.error(
         RAGDisplay.error(
-          `Collection "${collection}" does not exist. Create it first with: my-cli index create <directory>`,
-        ),
+          `Collection "${collection}" does not exist. Create it first with: my-cli index create <directory>`
+        )
       );
       process.exit(1);
     }

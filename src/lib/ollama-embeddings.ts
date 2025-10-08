@@ -46,9 +46,7 @@ export class OllamaEmbeddingsService {
 
       return response.embeddings[0];
     } catch (error) {
-      throw new Error(
-        `Failed to generate embedding: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      throw new Error(`Failed to generate embedding: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -84,7 +82,7 @@ export class OllamaEmbeddingsService {
         allEmbeddings.push(...response.embeddings);
       } catch (error) {
         throw new Error(
-          `Failed to generate embeddings for batch ${i}-${i + batch.length}: ${error instanceof Error ? error.message : String(error)}`,
+          `Failed to generate embeddings for batch ${i}-${i + batch.length}: ${error instanceof Error ? error.message : String(error)}`
         );
       }
     }

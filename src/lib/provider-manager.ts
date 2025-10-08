@@ -5,12 +5,7 @@
 import { ModelRouter } from './routing/model-router.js';
 import { OpenRouterProvider } from './providers/openrouter-provider.js';
 import { UsageTracker } from './usage-tracker.js';
-import type {
-  ChatMessage,
-  ChatOptions,
-  ChatResponse,
-  StreamResponse,
-} from './providers/base-provider.js';
+import type { ChatMessage, ChatOptions, ChatResponse, StreamResponse } from './providers/base-provider.js';
 import type { RoutingDecision, RoutingStrategy } from '../types/routing.js';
 
 export interface ProviderManagerOptions {
@@ -39,10 +34,7 @@ export class ProviderManager {
   /**
    * Select model for a given message
    */
-  selectModel(
-    userMessage: string,
-    conversationHistory: ChatMessage[] = [],
-  ): RoutingDecision {
+  selectModel(userMessage: string, conversationHistory: ChatMessage[] = []): RoutingDecision {
     // Get budget remaining for routing decision
     const budgetRemaining =
       this.usageTracker.getBudgetRemaining('daily') ||
@@ -62,10 +54,10 @@ export class ProviderManager {
    */
   async chat(
     messages: ChatMessage[],
-    options?: ChatOptions,
+    options?: ChatOptions
   ): Promise<{ response: ChatResponse; decision: RoutingDecision }> {
     // Get the last user message
-    const lastUserMessage = messages.filter((m) => m.role === 'user').pop();
+    const lastUserMessage = messages.filter(m => m.role === 'user').pop();
     if (!lastUserMessage) {
       throw new Error('No user message found in conversation');
     }
@@ -74,15 +66,12 @@ export class ProviderManager {
     const decision = this.selectModel(lastUserMessage.content, messages.slice(0, -1));
 
     // Execute with fallback
-    const response = await this.executeWithFallback(
-      async (model: string) => {
-        return await this.provider.chat(messages, {
-          ...options,
-          model,
-        });
-      },
-      decision,
-    );
+    const response = await this.executeWithFallback(async (model: string) => {
+      return await this.provider.chat(messages, {
+        ...options,
+        model,
+      });
+    }, decision);
 
     return { response, decision };
   }
@@ -92,10 +81,10 @@ export class ProviderManager {
    */
   async chatStream(
     messages: ChatMessage[],
-    options?: ChatOptions,
+    options?: ChatOptions
   ): Promise<{ stream: StreamResponse; decision: RoutingDecision }> {
     // Get the last user message
-    const lastUserMessage = messages.filter((m) => m.role === 'user').pop();
+    const lastUserMessage = messages.filter(m => m.role === 'user').pop();
     if (!lastUserMessage) {
       throw new Error('No user message found in conversation');
     }
@@ -104,15 +93,12 @@ export class ProviderManager {
     const decision = this.selectModel(lastUserMessage.content, messages.slice(0, -1));
 
     // Execute with fallback
-    const stream = await this.executeWithFallback(
-      async (model: string) => {
-        return await this.provider.chatStream(messages, {
-          ...options,
-          model,
-        });
-      },
-      decision,
-    );
+    const stream = await this.executeWithFallback(async (model: string) => {
+      return await this.provider.chatStream(messages, {
+        ...options,
+        model,
+      });
+    }, decision);
 
     return { stream, decision };
   }
@@ -123,7 +109,7 @@ export class ProviderManager {
   private async executeWithFallback<T extends ChatResponse | StreamResponse>(
     operation: (model: string) => Promise<T>,
     decision: RoutingDecision,
-    attemptCount: number = 0,
+    attemptCount: number = 0
   ): Promise<T> {
     const maxAttempts = 3;
 
@@ -137,7 +123,7 @@ export class ProviderManager {
           result.usage,
           decision.complexity,
           this.provider.estimateCost(result.usage, decision.model),
-          true,
+          true
         );
       }
 
@@ -149,9 +135,7 @@ export class ProviderManager {
       if (attemptCount >= maxAttempts - 1) {
         // Max attempts reached, log failure and throw
         this.usageTracker.logFailure(decision.model, errorMessage);
-        throw new Error(
-          `All attempts failed for ${decision.model} after ${maxAttempts} tries: ${errorMessage}`,
-        );
+        throw new Error(`All attempts failed for ${decision.model} after ${maxAttempts} tries: ${errorMessage}`);
       }
 
       // Try to get fallback

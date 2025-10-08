@@ -92,14 +92,14 @@ export async function initCommand(): Promise<void> {
   const answers = (await inquirer.prompt(questions)) as InitAnswers;
 
   // Ask about RAG setup
-  const ragSetup = await inquirer.prompt([
+  const ragSetup = (await inquirer.prompt([
     {
       type: 'confirm',
       name: 'setupRAG',
       message: 'Would you like to set up RAG for code search? (requires Ollama + ChromaDB)',
       default: false,
     },
-  ]) as RAGAnswers;
+  ])) as RAGAnswers;
 
   let budgetLimit: number | undefined;
 
@@ -130,7 +130,7 @@ export async function initCommand(): Promise<void> {
     Display.info('Get your API key at: https://e2b.dev/dashboard?tab=keys');
     Display.newline();
 
-    const e2bAnswer = await inquirer.prompt([
+    const e2bAnswer = (await inquirer.prompt([
       {
         type: 'password',
         name: 'e2bApiKey',
@@ -142,7 +142,7 @@ export async function initCommand(): Promise<void> {
           return true;
         },
       },
-    ]) as E2BAnswers;
+    ])) as E2BAnswers;
 
     if (e2bAnswer.e2bApiKey && e2bAnswer.e2bApiKey.trim().length > 0) {
       e2bApiKey = e2bAnswer.e2bApiKey.trim();

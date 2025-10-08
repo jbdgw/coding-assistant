@@ -87,20 +87,16 @@ export async function scrapeCommand(url: string, options: ScrapeCommandOptions):
       const indexSpinner = ora('Indexing...').start();
 
       try {
-        const indexResult = await indexer.indexDirectory(result.outputDir, (progress) => {
+        const indexResult = await indexer.indexDirectory(result.outputDir, progress => {
           indexSpinner.text = `Indexing: ${progress.processedFiles}/${progress.totalFiles} files`;
         });
 
         indexSpinner.stop();
 
         if (indexResult.success) {
-          Display.success(
-            `Indexed ${indexResult.processedFiles} files into collection "${collection}"`,
-          );
+          Display.success(`Indexed ${indexResult.processedFiles} files into collection "${collection}"`);
         } else {
-          Display.warning(
-            `Indexed ${indexResult.processedFiles} files, ${indexResult.failedFiles} failed`,
-          );
+          Display.warning(`Indexed ${indexResult.processedFiles} files, ${indexResult.failedFiles} failed`);
         }
       } catch (error) {
         indexSpinner.stop();
@@ -129,8 +125,8 @@ export function registerScrapeCommand(program: Command): void {
     .description('Scrape documentation website and optionally index it')
     .option('-c, --collection <name>', 'Collection name for indexing', 'docs')
     .option('-o, --output <dir>', 'Output directory for scraped files', './scraped-docs')
-    .option('--max-pages <number>', 'Maximum pages to scrape', (val) => parseInt(val), 50)
-    .option('--depth <number>', 'Maximum crawl depth', (val) => parseInt(val), 2)
+    .option('--max-pages <number>', 'Maximum pages to scrape', val => parseInt(val), 50)
+    .option('--depth <number>', 'Maximum crawl depth', val => parseInt(val), 2)
     .option('--single-page', 'Scrape only the single page (no crawling)', false)
     .option('--no-auto-index', 'Skip automatic indexing after scraping', false)
     .action(scrapeCommand);

@@ -33,25 +33,21 @@ export class Crawl4AIService {
    * Check if Crawl4AI is installed
    */
   async checkInstallation(): Promise<{ installed: boolean; error?: string }> {
-    return new Promise((resolve) => {
-      const python = spawn('python3', [
-        '-c',
-        'import crawl4ai; print("OK")',
-      ]);
+    return new Promise(resolve => {
+      const python = spawn('python3', ['-c', 'import crawl4ai; print("OK")']);
 
       let output = '';
-      python.stdout.on('data', (data) => {
+      python.stdout.on('data', data => {
         output += data.toString();
       });
 
-      python.on('close', (code) => {
+      python.on('close', code => {
         if (code === 0 && output.includes('OK')) {
           resolve({ installed: true });
         } else {
           resolve({
             installed: false,
-            error:
-              'Crawl4AI not installed. Run: pip3 install --user --break-system-packages crawl4ai',
+            error: 'Crawl4AI not installed. Run: pip3 install --user --break-system-packages crawl4ai',
           });
         }
       });
@@ -61,11 +57,7 @@ export class Crawl4AIService {
   /**
    * Scrape a documentation website
    */
-  async scrapeDocs(
-    url: string,
-    outputDir: string,
-    options: ScrapeOptions = {},
-  ): Promise<ScrapeResult> {
+  async scrapeDocs(url: string, outputDir: string, options: ScrapeOptions = {}): Promise<ScrapeResult> {
     // Check installation first
     const installCheck = await this.checkInstallation();
     if (!installCheck.installed) {
@@ -77,7 +69,7 @@ export class Crawl4AIService {
       };
     }
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const args = [this.pythonScript, url, outputDir];
 
       if (options.singlePage) {
@@ -97,18 +89,18 @@ export class Crawl4AIService {
       let stdout = '';
       let stderr = '';
 
-      python.stdout.on('data', (data) => {
+      python.stdout.on('data', data => {
         const output = data.toString();
         stdout += output;
         // Stream output to console
         process.stdout.write(output);
       });
 
-      python.stderr.on('data', (data) => {
+      python.stderr.on('data', data => {
         stderr += data.toString();
       });
 
-      python.on('close', (code) => {
+      python.on('close', code => {
         if (code === 0) {
           // Parse pages scraped from output
           const match = stdout.match(/Scraped (\d+) pages/);
@@ -129,7 +121,7 @@ export class Crawl4AIService {
         }
       });
 
-      python.on('error', (err) => {
+      python.on('error', err => {
         resolve({
           success: false,
           pagesScraped: 0,

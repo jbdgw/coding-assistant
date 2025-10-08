@@ -31,10 +31,7 @@ export class ComplexityAnalyzer {
   /**
    * Calculate complexity score and reasons
    */
-  private calculateComplexityScore(
-    userMessage: string,
-    conversationHistory: ChatMessage[],
-  ): ComplexityScore {
+  private calculateComplexityScore(userMessage: string, conversationHistory: ChatMessage[]): ComplexityScore {
     let score = 0;
     const reasons: string[] = [];
 
@@ -75,9 +72,7 @@ export class ComplexityAnalyzer {
       'rewrite',
     ];
 
-    const foundComplexKeywords = complexKeywords.filter((keyword) =>
-      userMessage.toLowerCase().includes(keyword),
-    );
+    const foundComplexKeywords = complexKeywords.filter(keyword => userMessage.toLowerCase().includes(keyword));
 
     if (foundComplexKeywords.length > 0) {
       score += 2;
@@ -92,7 +87,7 @@ export class ComplexityAnalyzer {
       /entire\s*(project|codebase|application)/i,
     ];
 
-    if (multiFileIndicators.some((regex) => regex.test(userMessage))) {
+    if (multiFileIndicators.some(regex => regex.test(userMessage))) {
       score += 2;
       reasons.push('Multi-file operation');
     }
@@ -107,7 +102,9 @@ export class ComplexityAnalyzer {
     }
 
     // 6. Question vs. task indicator
-    const isQuestion = /\?$/.test(userMessage.trim()) || userMessage.toLowerCase().startsWith('what') ||
+    const isQuestion =
+      /\?$/.test(userMessage.trim()) ||
+      userMessage.toLowerCase().startsWith('what') ||
       userMessage.toLowerCase().startsWith('how') ||
       userMessage.toLowerCase().startsWith('why');
 
@@ -128,9 +125,7 @@ export class ComplexityAnalyzer {
       'small change',
     ];
 
-    const foundSimpleKeywords = simpleKeywords.filter((keyword) =>
-      userMessage.toLowerCase().includes(keyword),
-    );
+    const foundSimpleKeywords = simpleKeywords.filter(keyword => userMessage.toLowerCase().includes(keyword));
 
     if (foundSimpleKeywords.length > 0) {
       score = Math.max(0, score - 2);
@@ -146,7 +141,7 @@ export class ComplexityAnalyzer {
   private extractCodeBlocks(message: string): string[] {
     const codeBlockRegex = /```[\s\S]*?```/g;
     const matches = message.match(codeBlockRegex) || [];
-    return matches.map((block) => block.replace(/```\w*\n?/g, '').replace(/```$/g, ''));
+    return matches.map(block => block.replace(/```\w*\n?/g, '').replace(/```$/g, ''));
   }
 
   /**
@@ -161,7 +156,7 @@ export class ComplexityAnalyzer {
    */
   analyzeDetailed(
     userMessage: string,
-    conversationHistory: ChatMessage[] = [],
+    conversationHistory: ChatMessage[] = []
   ): {
     complexity: TaskComplexity;
     score: number;

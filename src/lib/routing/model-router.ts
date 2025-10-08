@@ -28,7 +28,7 @@ export class ModelRouter {
   selectModel(
     userMessage: string,
     conversationHistory: ChatMessage[] = [],
-    options: ModelRouterOptions = {},
+    options: ModelRouterOptions = {}
   ): RoutingDecision {
     // 1. Analyze task complexity
     let complexity = this.complexityAnalyzer.analyze(userMessage, conversationHistory);
@@ -69,10 +69,7 @@ export class ModelRouter {
   /**
    * Get fallback model for a given model and complexity
    */
-  getFallback(
-    failedModel: string,
-    complexity: TaskComplexity,
-  ): { model: string; reason: string } | null {
+  getFallback(failedModel: string, complexity: TaskComplexity): { model: string; reason: string } | null {
     const routingTable = getRoutingTableForStrategy(this.strategy);
     const candidates = routingTable[complexity];
 
@@ -81,7 +78,7 @@ export class ModelRouter {
     }
 
     // Find next priority model
-    const currentModelIndex = candidates.findIndex((c) => c.model === failedModel);
+    const currentModelIndex = candidates.findIndex(c => c.model === failedModel);
     if (currentModelIndex === -1 || currentModelIndex === candidates.length - 1) {
       // No more fallbacks available
       return null;
@@ -125,10 +122,7 @@ export class ModelRouter {
    * Get detailed analysis (for debugging)
    */
   analyzeDetailed(userMessage: string, conversationHistory: ChatMessage[] = []) {
-    const complexityAnalysis = this.complexityAnalyzer.analyzeDetailed(
-      userMessage,
-      conversationHistory,
-    );
+    const complexityAnalysis = this.complexityAnalyzer.analyzeDetailed(userMessage, conversationHistory);
 
     return {
       complexity: complexityAnalysis,

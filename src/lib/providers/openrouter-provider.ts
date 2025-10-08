@@ -3,13 +3,7 @@
  */
 
 import { OpenRouterClient } from '../openrouter.js';
-import type {
-  LLMProvider,
-  ChatMessage,
-  ChatOptions,
-  ChatResponse,
-  StreamResponse,
-} from './base-provider.js';
+import type { LLMProvider, ChatMessage, ChatOptions, ChatResponse, StreamResponse } from './base-provider.js';
 import type { TokenUsage } from '../../types/routing.js';
 import { MODEL_PRICING } from '../cost-tracker.js';
 

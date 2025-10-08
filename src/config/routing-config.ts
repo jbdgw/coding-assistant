@@ -59,9 +59,7 @@ export const DEFAULT_ROUTING_TABLE: RoutingConfig = {
 /**
  * Strategy-specific adjustments to routing table
  */
-export function getRoutingTableForStrategy(
-  strategy: 'cost' | 'performance' | 'balanced',
-): RoutingConfig {
+export function getRoutingTableForStrategy(strategy: 'cost' | 'performance' | 'balanced'): RoutingConfig {
   const table = JSON.parse(JSON.stringify(DEFAULT_ROUTING_TABLE)) as RoutingConfig;
 
   switch (strategy) {

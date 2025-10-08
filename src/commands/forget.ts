@@ -49,9 +49,7 @@ export function forgetCommand() {
         Display.success(`✓ Session deleted: ${sessionId}`);
         Display.info('Note: Mastra thread and messages remain in memory.db for reference');
       } catch (error) {
-        Display.error(
-          `Failed to delete session: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
+        Display.error(`Failed to delete session: ${error instanceof Error ? error.message : 'Unknown error'}`);
         process.exit(1);
       } finally {
         sessionManager.close();

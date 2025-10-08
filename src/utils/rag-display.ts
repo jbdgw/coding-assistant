@@ -141,16 +141,11 @@ export class RAGDisplay {
   /**
    * Display connection status
    */
-  static connectionStatus(
-    ollama: boolean,
-    chromadb: boolean,
-    unstructured: boolean,
-  ): string {
+  static connectionStatus(ollama: boolean, chromadb: boolean, unstructured: boolean): string {
     let output = chalk.bold('\nRAG Service Status:\n');
     output += chalk.dim('─────────────────────────────────────────\n');
 
-    const status = (available: boolean) =>
-      available ? chalk.green('✓ Connected') : chalk.red('✗ Not available');
+    const status = (available: boolean) => (available ? chalk.green('✓ Connected') : chalk.red('✗ Not available'));
 
     output += `Ollama:        ${status(ollama)}\n`;
     output += `ChromaDB:      ${status(chromadb)}\n`;

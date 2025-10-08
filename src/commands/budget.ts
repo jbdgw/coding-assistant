@@ -11,9 +11,7 @@ import chalk from 'chalk';
  * Register budget subcommands
  */
 export function registerBudgetCommand(program: Command): void {
-  const budget = program
-    .command('budget')
-    .description('Manage budget limits for API usage');
+  const budget = program.command('budget').description('Manage budget limits for API usage');
 
   // budget set
   budget

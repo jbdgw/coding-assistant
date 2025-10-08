@@ -80,7 +80,10 @@ export function initializeDatabase(dbPath?: string): Database.Database {
       total_cost REAL DEFAULT 0,
       tags TEXT,
       summary TEXT,
-      context_loaded TEXT
+      context_loaded TEXT,
+      primary_language TEXT,
+      frameworks_used TEXT,
+      productivity_score REAL
     );
 
     -- User preferences table
@@ -130,6 +133,28 @@ export function initializeDatabase(dbPath?: string): Database.Database {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- Daily stats aggregation table
+    CREATE TABLE IF NOT EXISTS daily_stats (
+      date TEXT PRIMARY KEY,
+      sessions_count INTEGER DEFAULT 0,
+      total_cost REAL DEFAULT 0,
+      total_tokens INTEGER DEFAULT 0,
+      files_modified INTEGER DEFAULT 0,
+      primary_activities TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Learning patterns table
+    CREATE TABLE IF NOT EXISTS learning_patterns (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      topic TEXT NOT NULL,
+      frequency INTEGER DEFAULT 1,
+      last_accessed DATETIME DEFAULT CURRENT_TIMESTAMP,
+      mastery_level TEXT DEFAULT 'beginner',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(topic)
+    );
+
     -- Indexes for performance
     CREATE INDEX IF NOT EXISTS idx_usage_timestamp ON usage_logs(timestamp);
     CREATE INDEX IF NOT EXISTS idx_usage_model ON usage_logs(model);
@@ -141,6 +166,9 @@ export function initializeDatabase(dbPath?: string): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_learnings_session ON learnings(session_id);
     CREATE INDEX IF NOT EXISTS idx_learnings_category ON learnings(category);
     CREATE INDEX IF NOT EXISTS idx_projects_mentioned ON projects(last_mentioned_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_daily_stats_date ON daily_stats(date DESC);
+    CREATE INDEX IF NOT EXISTS idx_learning_patterns_topic ON learning_patterns(topic);
+    CREATE INDEX IF NOT EXISTS idx_learning_patterns_accessed ON learning_patterns(last_accessed DESC);
   `);
 
   // Initialize budget config if not exists
@@ -196,6 +224,9 @@ export interface SessionRow {
   tags: string | null; // JSON array
   summary: string | null;
   context_loaded: string | null; // JSON object
+  primary_language: string | null;
+  frameworks_used: string | null; // JSON array
+  productivity_score: number | null;
 }
 
 export interface UserPreferenceRow {
@@ -236,5 +267,24 @@ export interface CommonPatternRow {
   solution: string;
   frequency: number;
   last_used_at: string;
+  created_at: string;
+}
+
+export interface DailyStatsRow {
+  date: string; // YYYY-MM-DD
+  sessions_count: number;
+  total_cost: number;
+  total_tokens: number;
+  files_modified: number;
+  primary_activities: string | null; // JSON array
+  created_at: string;
+}
+
+export interface LearningPatternRow {
+  id: number;
+  topic: string;
+  frequency: number;
+  last_accessed: string;
+  mastery_level: 'beginner' | 'intermediate' | 'advanced' | 'expert';
   created_at: string;
 }

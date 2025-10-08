@@ -49,15 +49,9 @@ export function strategyCommand(options: StrategyCommandOptions = {}): void {
 function displayRoutingTable(strategy: RoutingStrategy): void {
   const routingTable = getRoutingTableForStrategy(strategy);
 
-  console.log(
-    chalk.dim(`\nThis strategy determines which models are selected for different task complexities.\n`),
-  );
+  console.log(chalk.dim(`\nThis strategy determines which models are selected for different task complexities.\n`));
 
-  const complexities: TaskComplexity[] = [
-    TaskComplexity.SIMPLE,
-    TaskComplexity.MODERATE,
-    TaskComplexity.COMPLEX,
-  ];
+  const complexities: TaskComplexity[] = [TaskComplexity.SIMPLE, TaskComplexity.MODERATE, TaskComplexity.COMPLEX];
 
   for (const complexity of complexities) {
     const candidates = routingTable[complexity];
@@ -77,9 +71,7 @@ function displayRoutingTable(strategy: RoutingStrategy): void {
       const prefix = isPrimary ? chalk.green('  ●') : chalk.yellow('  ○');
       const label = isPrimary ? ' (primary)' : ' (fallback)';
 
-      console.log(
-        `${prefix} ${candidate.model.padEnd(30)} $${candidate.cost.toFixed(2)}/1M tokens${chalk.dim(label)}`,
-      );
+      console.log(`${prefix} ${candidate.model.padEnd(30)} $${candidate.cost.toFixed(2)}/1M tokens${chalk.dim(label)}`);
     });
   }
 

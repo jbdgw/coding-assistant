@@ -44,9 +44,7 @@ export function rememberCommand() {
         console.log();
         Display.info('The AI will use this preference in future conversations');
       } catch (error) {
-        Display.error(
-          `Failed to store preference: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        );
+        Display.error(`Failed to store preference: ${error instanceof Error ? error.message : 'Unknown error'}`);
         process.exit(1);
       } finally {
         db.close();
@@ -58,7 +56,7 @@ export function rememberCommand() {
     .command('list')
     .description('List all stored preferences')
     .option('-c, --category <category>', 'Filter by category')
-    .action((options) => {
+    .action(options => {
       const db = initializeDatabase();
 
       try {

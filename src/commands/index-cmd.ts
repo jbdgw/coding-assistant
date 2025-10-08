@@ -17,7 +17,7 @@ export async function indexCommand(directory: string, options: IndexOptions): Pr
 
   // Parse options
   const collection = options.collection || path.basename(dir);
-  const fileTypes = options.fileTypes?.split(',').map((ext) => (ext.startsWith('.') ? ext : `.${ext}`));
+  const fileTypes = options.fileTypes?.split(',').map(ext => (ext.startsWith('.') ? ext : `.${ext}`));
   const exclude = options.exclude?.split(',');
 
   console.log(RAGDisplay.info(`Indexing directory: ${dir}`));
@@ -35,7 +35,7 @@ export async function indexCommand(directory: string, options: IndexOptions): Pr
 
   try {
     // Index directory
-    const result = await indexer.indexDirectory(dir, (progress) => {
+    const result = await indexer.indexDirectory(dir, progress => {
       spinner.text = RAGDisplay.indexingProgress(progress);
     });
 
@@ -110,9 +110,7 @@ export async function indexDeleteCommand(collection: string): Promise<void> {
 
 // Register command with Commander
 export function registerIndexCommand(program: Command): void {
-  const indexCmd = program
-    .command('index')
-    .description('Index a codebase for RAG retrieval');
+  const indexCmd = program.command('index').description('Index a codebase for RAG retrieval');
 
   indexCmd
     .command('create <directory>')
@@ -122,18 +120,9 @@ export function registerIndexCommand(program: Command): void {
     .option('-e, --exclude <patterns>', 'Comma-separated exclude patterns (e.g., node_modules,.git)')
     .action(indexCommand);
 
-  indexCmd
-    .command('list')
-    .description('List all collections')
-    .action(indexListCommand);
+  indexCmd.command('list').description('List all collections').action(indexListCommand);
 
-  indexCmd
-    .command('stats <collection>')
-    .description('Show collection statistics')
-    .action(indexStatsCommand);
+  indexCmd.command('stats <collection>').description('Show collection statistics').action(indexStatsCommand);
 
-  indexCmd
-    .command('delete <collection>')
-    .description('Delete a collection')
-    .action(indexDeleteCommand);
+  indexCmd.command('delete <collection>').description('Delete a collection').action(indexDeleteCommand);
 }

@@ -57,9 +57,7 @@ export class VectorStore {
         metric: 'cosine',
       });
     } catch (error) {
-      throw new Error(
-        `Failed to create collection ${name}: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      throw new Error(`Failed to create collection ${name}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -70,7 +68,7 @@ export class VectorStore {
     collectionName: string,
     vectors: number[][],
     metadata: DocumentMetadata[],
-    ids?: string[],
+    ids?: string[]
   ): Promise<void> {
     if (vectors.length === 0) {
       return;
@@ -88,9 +86,7 @@ export class VectorStore {
         ids,
       });
     } catch (error) {
-      throw new Error(
-        `Failed to upsert vectors: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      throw new Error(`Failed to upsert vectors: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -104,7 +100,7 @@ export class VectorStore {
       topK?: number;
       filter?: Record<string, any>;
       includeVectors?: boolean;
-    } = {},
+    } = {}
   ): Promise<QueryResult[]> {
     try {
       const results = await this.store.query<DocumentMetadata>({
@@ -115,15 +111,13 @@ export class VectorStore {
         includeVector: options.includeVectors || false,
       });
 
-      return results.map((result) => ({
+      return results.map(result => ({
         id: result.id,
         score: result.score,
         metadata: result.metadata as DocumentMetadata,
       }));
     } catch (error) {
-      throw new Error(
-        `Failed to query vectors: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      throw new Error(`Failed to query vectors: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -135,9 +129,7 @@ export class VectorStore {
       const collections = await this.store.listIndexes();
       return collections;
     } catch (error) {
-      throw new Error(
-        `Failed to list collections: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      throw new Error(`Failed to list collections: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -153,9 +145,7 @@ export class VectorStore {
         dimension: info.dimension,
       };
     } catch (error) {
-      throw new Error(
-        `Failed to get collection info: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      throw new Error(`Failed to get collection info: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -166,9 +156,7 @@ export class VectorStore {
     try {
       await this.store.deleteIndex({ indexName: name });
     } catch (error) {
-      throw new Error(
-        `Failed to delete collection ${name}: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      throw new Error(`Failed to delete collection ${name}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

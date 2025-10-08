@@ -7,6 +7,7 @@ Complete guide to scraping documentation websites with Crawl4AI for your knowled
 Crawl4AI is an open-source, LLM-friendly web crawler specifically designed for extracting documentation and converting it to markdown - perfect for RAG systems!
 
 **Benefits:**
+
 - ✅ **100% Free** - no API keys, no subscriptions
 - ✅ **Fast** - async crawling with JavaScript rendering
 - ✅ **Smart** - automatically extracts main content
@@ -57,14 +58,14 @@ npm run dev -- scrape https://docs.astro.build \
 
 ### Options
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--collection <name>` | Collection name for indexing | `docs` |
-| `--output <dir>` | Output directory for markdown files | `./scraped-docs` |
-| `--max-pages <N>` | Maximum pages to scrape | `50` |
-| `--depth <N>` | Maximum crawl depth | `2` |
-| `--single-page` | Scrape only one page (no crawling) | `false` |
-| `--no-auto-index` | Skip automatic indexing | Auto-indexes by default |
+| Option                | Description                         | Default                 |
+| --------------------- | ----------------------------------- | ----------------------- |
+| `--collection <name>` | Collection name for indexing        | `docs`                  |
+| `--output <dir>`      | Output directory for markdown files | `./scraped-docs`        |
+| `--max-pages <N>`     | Maximum pages to scrape             | `50`                    |
+| `--depth <N>`         | Maximum crawl depth                 | `2`                     |
+| `--single-page`       | Scrape only one page (no crawling)  | `false`                 |
+| `--no-auto-index`     | Skip automatic indexing             | Auto-indexes by default |
 
 ## Real-World Examples
 
@@ -238,11 +239,13 @@ npm run dev -- index create ./docs --collection frontend-frameworks
 ### Issue: Crawl4AI not installed
 
 **Error:**
+
 ```
 Crawl4AI is not installed!
 ```
 
 **Solution:**
+
 ```bash
 ./scripts/setup-crawl4ai.sh
 ```
@@ -252,6 +255,7 @@ Crawl4AI is not installed!
 **Cause:** Large sites with many pages
 
 **Solutions:**
+
 ```bash
 # 1. Reduce max pages
 --max-pages 25
@@ -268,6 +272,7 @@ npm run dev -- scrape https://docs.site.com/api-ref --max-pages 50
 **Cause:** Site structure not detected properly
 
 **Solutions:**
+
 ```bash
 # 1. Try single page first to verify
 --single-page
@@ -283,6 +288,7 @@ npm run dev -- scrape https://docs.site.com/api-ref --max-pages 50
 **Cause:** Crawler following all links
 
 **Solutions:**
+
 ```bash
 # 1. Use lower depth
 --depth 1
@@ -308,15 +314,15 @@ python3 scripts/crawl-docs.py https://docs.site.com ./output --max-pages 100 --d
 
 ## Comparison with Alternatives
 
-| Feature | Crawl4AI | Firecrawl | Unstructured.io |
-|---------|----------|-----------|-----------------|
-| **Cost** | Free | $20/month | $500/month |
-| **Runs Locally** | ✅ Yes | ❌ No | ❌ No |
-| **JavaScript Rendering** | ✅ Yes | ✅ Yes | ❌ No |
-| **LLM-Friendly** | ✅ Yes | ✅ Yes | ⚠️ Partial |
-| **Markdown Output** | ✅ Yes | ✅ Yes | ❌ No |
-| **Setup Complexity** | Easy | Medium | Hard |
-| **Rate Limits** | None | Yes | Yes |
+| Feature                  | Crawl4AI | Firecrawl | Unstructured.io |
+| ------------------------ | -------- | --------- | --------------- |
+| **Cost**                 | Free     | $20/month | $500/month      |
+| **Runs Locally**         | ✅ Yes   | ❌ No     | ❌ No           |
+| **JavaScript Rendering** | ✅ Yes   | ✅ Yes    | ❌ No           |
+| **LLM-Friendly**         | ✅ Yes   | ✅ Yes    | ⚠️ Partial      |
+| **Markdown Output**      | ✅ Yes   | ✅ Yes    | ❌ No           |
+| **Setup Complexity**     | Easy     | Medium    | Hard            |
+| **Rate Limits**          | None     | Yes       | Yes             |
 
 ## Next Steps
 

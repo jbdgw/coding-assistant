@@ -38,24 +38,50 @@ export class CodebaseIndexer {
 
   // Default supported file extensions (text-based files only)
   private static readonly DEFAULT_FILE_TYPES = [
-    '.py', '.js', '.ts', '.tsx', '.jsx', '.md', '.txt', '.json',
-    '.go', '.rs', '.java', '.cpp', '.c', '.h', '.hpp',
-    '.html', '.css', '.scss', '.sass', '.less',
-    '.xml', '.yml', '.yaml', '.toml', '.ini', '.env',
-    '.sh', '.bash', '.zsh', '.fish',
-    '.rb', '.php', '.swift', '.kt', '.scala',
-    '.sql', '.graphql', '.proto',
+    '.py',
+    '.js',
+    '.ts',
+    '.tsx',
+    '.jsx',
+    '.md',
+    '.txt',
+    '.json',
+    '.go',
+    '.rs',
+    '.java',
+    '.cpp',
+    '.c',
+    '.h',
+    '.hpp',
+    '.html',
+    '.css',
+    '.scss',
+    '.sass',
+    '.less',
+    '.xml',
+    '.yml',
+    '.yaml',
+    '.toml',
+    '.ini',
+    '.env',
+    '.sh',
+    '.bash',
+    '.zsh',
+    '.fish',
+    '.rb',
+    '.php',
+    '.swift',
+    '.kt',
+    '.scala',
+    '.sql',
+    '.graphql',
+    '.proto',
   ];
 
-  constructor(
-    config: IndexerConfig,
-    embeddings?: OllamaEmbeddingsService,
-    vectorStore?: VectorStore,
-  ) {
+  constructor(config: IndexerConfig, embeddings?: OllamaEmbeddingsService, vectorStore?: VectorStore) {
     this.config = {
       collectionName: config.collectionName,
-      fileTypes:
-        config.fileTypes || CodebaseIndexer.DEFAULT_FILE_TYPES,
+      fileTypes: config.fileTypes || CodebaseIndexer.DEFAULT_FILE_TYPES,
       exclude: config.exclude || ['node_modules', '.git', 'dist', 'build', '.next'],
       chunkSize: config.chunkSize || 512,
       chunkOverlap: config.chunkOverlap || 50,
@@ -71,7 +97,7 @@ export class CodebaseIndexer {
    */
   async indexDirectory(
     directory: string,
-    progressCallback?: (progress: IndexingProgress) => void,
+    progressCallback?: (progress: IndexingProgress) => void
   ): Promise<IndexingResult> {
     // Ensure collection exists
     const dimension = await this.embeddings.getDimension();
@@ -143,9 +169,7 @@ export class CodebaseIndexer {
     try {
       text = await fs.readFile(filePath, 'utf-8');
     } catch (error) {
-      throw new Error(
-        `Failed to read file ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      throw new Error(`Failed to read file ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     if (!text || text.trim().length === 0) {
@@ -163,7 +187,9 @@ export class CodebaseIndexer {
     // Convert chunks to array if needed
     const chunksArray = Array.isArray(chunksResult)
       ? chunksResult
-      : (chunksResult as any).getDocs ? (chunksResult as any).getDocs() : [];
+      : (chunksResult as any).getDocs
+        ? (chunksResult as any).getDocs()
+        : [];
 
     if (chunksArray.length === 0) {
       return; // No chunks to index
@@ -172,10 +198,7 @@ export class CodebaseIndexer {
     // Extract text from chunks
     const chunkTexts = chunksArray.map((chunk: any) => chunk.text || chunk.pageContent || '');
 
-    const { embeddings } = await this.embeddings.embedMany(
-      chunkTexts,
-      this.config.batchSize,
-    );
+    const { embeddings } = await this.embeddings.embedMany(chunkTexts, this.config.batchSize);
 
     // Prepare metadata
     const metadata: DocumentMetadata[] = chunkTexts.map((chunkText: string, i: number) => ({
@@ -193,12 +216,7 @@ export class CodebaseIndexer {
     const ids = chunkTexts.map((_: string, i: number) => `${relativePath}_chunk_${i}`);
 
     // Upsert to vector store
-    await this.vectorStore.upsert(
-      this.config.collectionName,
-      embeddings,
-      metadata,
-      ids,
-    );
+    await this.vectorStore.upsert(this.config.collectionName, embeddings, metadata, ids);
   }
 
   /**
@@ -214,7 +232,7 @@ export class CodebaseIndexer {
         const fullPath = path.join(dir, entry.name);
 
         // Check if excluded
-        if (exclude.some((pattern) => fullPath.includes(pattern))) {
+        if (exclude.some(pattern => fullPath.includes(pattern))) {
           continue;
         }
 
@@ -229,7 +247,7 @@ export class CodebaseIndexer {
     await scan(directory, this.config.exclude);
 
     // Filter by supported file types
-    return files.filter((file) => {
+    return files.filter(file => {
       const ext = path.extname(file).toLowerCase();
       return this.config.fileTypes.includes(ext);
     });
