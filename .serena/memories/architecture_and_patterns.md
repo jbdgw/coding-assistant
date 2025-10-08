@@ -10,6 +10,7 @@
 ├─────────────────────────────────────────────────┤
 │     Commands Layer (commands/)                  │  ← User interactions
 │     - chat, init, sessions, resume, etc.        │
+│     - mode, plugin (Phase 1, not yet impl.)     │
 ├─────────────────────────────────────────────────┤
 │  Business Logic Layer (lib/)                    │  ← Core functionality
 │  - chat-loop-mastra.ts (main chat loop)         │
@@ -17,6 +18,9 @@
 │  - memory-instance.ts (Mastra Memory)           │
 │  - provider-manager.ts (smart routing)          │
 │  - e2b-sandbox-manager.ts (code execution)      │
+│  - modes/ (agent mode management) NEW           │
+│  - plugins/ (plugin system) NEW                 │
+│  - quality/ (code analysis) NEW                 │
 ├─────────────────────────────────────────────────┤
 │  Mastra Layer (mastra/)                         │  ← AI framework
 │  - agents/ (chat agent configuration)           │
@@ -24,9 +28,10 @@
 │  - mcp/ (documentation MCP client)              │
 ├─────────────────────────────────────────────────┤
 │  Storage Layer                                  │  ← Data persistence
-│  - usage.db (sessions, preferences, analytics)  │
+│  - usage.db (sessions, analytics, daily_stats)  │
 │  - memory.db (Mastra threads & messages)        │
 │  - chroma/ (vector embeddings for RAG)          │
+│  - plugins/ (user plugins directory)  NEW       │
 ├─────────────────────────────────────────────────┤
 │  External APIs                                  │  ← External services
 │  - OpenRouter (multi-model LLM access)          │
@@ -88,6 +93,7 @@
 - Error recovery with graceful handling
 
 **Design Choices**:
+
 - Agent initialized lazily on first message (avoids MCP loading delay at startup)
 - Null-safe agent property (`Agent | null`)
 - Resource ID based on hostname for consistent cross-session memory
@@ -106,6 +112,7 @@
 - Session tagging and summaries
 
 **Database Schema**:
+
 ```sql
 sessions (
   id, thread_id, title, started_at, ended_at,
@@ -130,6 +137,7 @@ common_patterns (pattern_type, pattern_name, code_snippet, usage_count)
 - Cross-session semantic search (requires OPENAI_API_KEY)
 
 **Design Choices**:
+
 - Graceful degradation without OpenAI key (working memory still works)
 - Database in user config directory (~/.config/ai-coding-cli-nodejs/memory.db)
 - Working memory template for structured user profiling
@@ -153,18 +161,20 @@ common_patterns (pattern_type, pattern_name, code_snippet, usage_count)
 **Purpose**: Connect to Mastra documentation MCP server
 **Pattern**: MCP client with npx server invocation
 **Configuration**:
+
 ```typescript
 new MCPClient({
   servers: {
     mastra: {
       command: 'npx',
-      args: ['-y', '@mastra/mcp-docs-server@latest']
-    }
-  }
-})
+      args: ['-y', '@mastra/mcp-docs-server@latest'],
+    },
+  },
+});
 ```
 
 **Tools Provided**:
+
 - `mcp__mastra__mastraDocs`: Search Mastra documentation
 - `mcp__mastra__mastraExamples`: Get code examples
 - `mcp__mastra__mastraChanges`: Get changelog information
@@ -302,11 +312,7 @@ async handleMessage(userMessage: string) {
 **Solution**: Multi-property fallback
 
 ```typescript
-const promptTokens = 
-  usage.promptTokens ?? 
-  usage.inputTokens ?? 
-  usage.prompt_tokens ?? 
-  0;
+const promptTokens = usage.promptTokens ?? usage.inputTokens ?? usage.prompt_tokens ?? 0;
 ```
 
 ## Extension Points
