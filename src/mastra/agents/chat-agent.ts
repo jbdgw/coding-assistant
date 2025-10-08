@@ -3,15 +3,16 @@ import { Memory } from '@mastra/memory';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { executeCodeTool, writeFileTool, writeMultipleFilesTool, readFileTool, listFilesTool } from '../tools/index.js';
 import { ragSearchTool } from '../tools/rag-search.js';
+import { docsMcpClient } from '../mcp/docs-mcp-client.js';
 
-export function createChatAgent(model: string, memory?: Memory) {
+export async function createChatAgent(model: string, memory: Memory) {
   // Check if E2B is configured
   const hasE2B = !!process.env.E2B_API_KEY;
 
   // Check if RAG is configured (Ollama + ChromaDB)
   const hasRAG = !!process.env.OLLAMA_BASE_URL;
 
-  const baseInstructions = `You are an expert coding assistant specialized in helping developers write, debug, and improve code.
+  const baseInstructions = `You are an expert coding assistant with persistent memory across all conversations specialized in helping developers write, debug, and improve code.
 
 Your capabilities include:
 - Writing clean, efficient, and well-documented code in multiple programming languages
@@ -20,7 +21,27 @@ Your capabilities include:
 - Providing code reviews and suggestions for improvements
 - Helping with algorithm design and optimization
 - Answering questions about software development best practices
-- Assisting with documentation and code comments`;
+- Assisting with documentation and code comments
+- **PERSISTENT MEMORY**: You remember user preferences, past conversations, and learned insights across all sessions
+- **USER PROFILING**: You maintain a comprehensive profile of the user's coding style, tools, and common patterns`;
+
+  const memoryInstructions = `
+
+## Memory and Learning
+
+You have resource-scoped working memory that persists across ALL conversation sessions:
+- Everything you learn about the user is saved permanently in your working memory
+- You can reference past conversations and solutions from previous sessions
+- Always update your working memory with important user preferences, coding patterns, and insights
+- When the user mentions a preference, project, or pattern, add it to working memory using <working_memory> tags
+- Check your working memory to personalize responses based on the user's known preferences
+
+When interacting with the user:
+- Refer to past conversations when relevant ("Last week you mentioned...")
+- Apply their known coding style preferences automatically
+- Avoid suggesting things you know they don't like
+- Build on previous work and solutions
+- Learn from corrections and feedback`;
 
   const e2bInstructions = hasE2B
     ? `
@@ -59,6 +80,19 @@ Always cite the source files when showing code from indexed projects.`
 
 Note: RAG is not configured. To enable code search features, set up Ollama and ChromaDB, then index a codebase.`;
 
+  const docsInstructions = `
+- **ACCESSING MASTRA DOCUMENTATION**: You have direct access to Mastra.ai documentation, examples, and reference materials
+- **DOCUMENTATION SEARCH**: When the user asks about Mastra features, APIs, or how to use Mastra, use the MCP documentation tools
+- **CODE EXAMPLES**: You can retrieve working code examples from Mastra's example repository
+
+When to use documentation tools:
+- User asks about Mastra capabilities or features (e.g., "does Mastra work with Next.js?")
+- User needs to know how to integrate or configure Mastra
+- User wants to see example implementations
+- User asks about specific Mastra APIs or workflows
+
+Always provide accurate information from the official documentation when answering Mastra-related questions.`;
+
   const codeGuidelines = `
 
 When providing code:
@@ -94,6 +128,14 @@ Always be helpful, clear, and concise in your responses.`;
     tools.search_indexed_code = ragSearchTool;
   }
 
+  // Load MCP documentation tools
+  try {
+    const mcpTools = await docsMcpClient.getTools();
+    Object.assign(tools, mcpTools);
+  } catch (error) {
+    console.error('Failed to load MCP documentation tools:', error);
+  }
+
   // Create OpenRouter provider
   const openrouter = createOpenRouter({
     apiKey: process.env.OPENROUTER_API_KEY!,
@@ -101,7 +143,8 @@ Always be helpful, clear, and concise in your responses.`;
 
   return new Agent({
     name: 'Coding Assistant',
-    instructions: baseInstructions + e2bInstructions + ragInstructions + codeGuidelines,
+    instructions:
+      baseInstructions + memoryInstructions + e2bInstructions + ragInstructions + docsInstructions + codeGuidelines,
     model: openrouter(model), // Use OpenRouter with the model ID
     memory,
     tools: Object.keys(tools).length > 0 ? tools : undefined,

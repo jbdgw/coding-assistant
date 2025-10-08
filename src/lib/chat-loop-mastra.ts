@@ -4,22 +4,44 @@ import { Display } from '../utils/display.js';
 import { CostTracker } from './cost-tracker.js';
 import { configManager } from './config.js';
 import { E2BSandboxManager } from './e2b-sandbox-manager.js';
+import { SessionManager } from './session-manager.js';
+import { getMemory } from './memory-instance.js';
 import { createChatAgent } from '../mastra/agents/chat-agent.js';
 import { Agent } from '@mastra/core/agent';
+import { Memory } from '@mastra/memory';
 import chalk from 'chalk';
 import { ProviderManager } from './provider-manager.js';
 import type { RoutingStrategy, RoutingDecision } from '../types/routing.js';
+import { customAlphabet } from 'nanoid';
+import os from 'os';
+
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 16);
+
+/**
+ * Get a unique resource ID for this user/machine
+ */
+function getResourceId(): string {
+  // Use machine hostname as resource ID (consistent across sessions)
+  return `user-${os.hostname()}`;
+}
 
 export interface MastraChatLoopOptions {
   model: string;
   useSmartRouting?: boolean;
   strategy?: RoutingStrategy;
   budgetLimit?: number;
+  sessionId?: string; // Resume existing session
+  threadId?: string; // Resume with specific thread ID
 }
 
 export class MastraChatLoop {
   private model: string;
-  private agent: Agent;
+  private agent: Agent | null = null;
+  private memory: Memory;
+  private sessionManager: SessionManager;
+  private sessionId: string;
+  private threadId: string;
+  private resourceId: string;
   private costTracker: CostTracker;
   private providerManager?: ProviderManager;
   private useSmartRouting: boolean;
@@ -32,7 +54,40 @@ export class MastraChatLoop {
     this.model = options.model;
     this.useSmartRouting = options.useSmartRouting || false;
     this.currentModel = this.model;
-    this.agent = createChatAgent(this.model);
+
+    // Initialize memory and session management
+    this.memory = getMemory();
+    this.sessionManager = new SessionManager();
+    this.resourceId = getResourceId();
+
+    // Use provided session/thread IDs or generate new ones
+    if (options.sessionId) {
+      // Resume existing session
+      const session = this.sessionManager.getSession(options.sessionId);
+      if (!session) {
+        throw new Error(`Session not found: ${options.sessionId}`);
+      }
+      this.sessionId = session.id;
+      this.threadId = session.threadId;
+    } else if (options.threadId) {
+      // Resume with specific thread ID
+      const session = this.sessionManager.getSessionByThreadId(options.threadId);
+      if (!session) {
+        throw new Error(`Session not found for thread: ${options.threadId}`);
+      }
+      this.sessionId = session.id;
+      this.threadId = session.threadId;
+    } else {
+      // Create new session
+      this.threadId = nanoid();
+      const session = this.sessionManager.createSession({
+        threadId: this.threadId,
+        title: 'New Chat Session',
+      });
+      this.sessionId = session.id;
+    }
+
+    // Agent will be created lazily in handleMessage
     this.costTracker = new CostTracker();
     this.conversationHistory = [];
 
@@ -58,14 +113,48 @@ export class MastraChatLoop {
 
   start(): void {
     this.isRunning = true;
-    Display.header('AI Coding Chat with E2B');
+    const session = this.sessionManager.getSession(this.sessionId)!;
+
+    // Prevent unhandled errors from killing the process
+    process.on('uncaughtException', (error) => {
+      console.error(chalk.red('\n⚠️  Uncaught Exception:'), error);
+      Display.info('Chat continues - type your next message or /exit to quit');
+      this.rl.prompt();
+    });
+
+    process.on('unhandledRejection', (reason) => {
+      console.error(chalk.red('\n⚠️  Unhandled Rejection:'), reason);
+      Display.info('Chat continues - type your next message or /exit to quit');
+      this.rl.prompt();
+    });
+
+    Display.header('AI Coding Chat with Persistent Memory');
+
+    // Display session info
+    if (session.messageCount > 0) {
+      Display.info(
+        `📝 Resuming: ${session.title || 'Untitled'} (${session.messageCount} messages, started ${session.startedAt.toLocaleString()})`,
+      );
+    } else {
+      Display.info(`📝 Session: ${session.id}`);
+    }
+
+    Display.success('💾 Persistent Memory: Enabled ✓');
+    if (!process.env.OPENAI_API_KEY) {
+      Display.info('   Working Memory + Conversation History (Semantic search disabled)');
+      console.log(chalk.dim('   Tip: Add OPENAI_API_KEY to enable semantic search across all past sessions'));
+    } else {
+      Display.info('   Full Memory: Working Memory + Conversation History + Semantic Search');
+    }
 
     if (this.useSmartRouting && this.providerManager) {
       Display.info(`Smart Routing: Enabled (${this.providerManager.getStrategy()} strategy)`);
       const budgetConfig = this.providerManager.getUsageTracker().getBudgetConfig();
       if (budgetConfig.dailyLimit) {
         const remaining = this.providerManager.getUsageTracker().getBudgetRemaining('daily');
-        Display.info(`Daily Budget: $${budgetConfig.dailyLimit.toFixed(2)} (Remaining: $${remaining?.toFixed(2) || '0.00'})`);
+        Display.info(
+          `Daily Budget: $${budgetConfig.dailyLimit.toFixed(2)} (Remaining: $${remaining?.toFixed(2) || '0.00'})`,
+        );
       }
     } else {
       Display.info(`Model: ${this.model}`);
@@ -99,9 +188,15 @@ export class MastraChatLoop {
       }
 
       // Regular message
-      void this.handleMessage(trimmed).then(() => {
-        this.rl.prompt();
-      });
+      void this.handleMessage(trimmed)
+        .then(() => {
+          this.rl.prompt();
+        })
+        .catch((error) => {
+          console.error(chalk.red('\n⚠️  Error handling message:'), error);
+          Display.info('Chat continues - type your next message or /exit to quit');
+          this.rl.prompt();
+        });
     });
 
     this.rl.on('close', () => {
@@ -146,6 +241,11 @@ export class MastraChatLoop {
     const spinner = ora('Thinking...').start();
 
     try {
+      // Initialize agent if not yet created (lazy loading)
+      if (!this.agent) {
+        this.agent = await createChatAgent(this.model, this.memory);
+      }
+
       // If smart routing is enabled, select model dynamically
       if (this.useSmartRouting && this.providerManager) {
         routingDecision = this.providerManager.selectModel(
@@ -156,7 +256,7 @@ export class MastraChatLoop {
         // Update current model and recreate agent if model changed
         if (this.currentModel !== routingDecision.model) {
           this.currentModel = routingDecision.model;
-          this.agent = createChatAgent(this.currentModel);
+          this.agent = await createChatAgent(this.currentModel, this.memory);
         }
 
         // Show routing decision
@@ -165,12 +265,16 @@ export class MastraChatLoop {
         spinner.start('Thinking...');
       }
 
-      // Use Mastra agent with tools
+      // Use Mastra agent with tools and memory
       const result = await this.agent.generate(userMessage, {
         modelSettings: {
           temperature: configManager.get('temperature') || 0.7,
         },
         maxSteps: 10, // Allow multiple tool calls
+        memory: {
+          thread: this.threadId,
+          resource: this.resourceId,
+        },
       });
 
       spinner.stop();
@@ -206,17 +310,37 @@ export class MastraChatLoop {
       console.log(result.text);
       Display.newline();
 
+      // Debug: Log raw usage data
+      if (process.env.DEBUG_USAGE) {
+        console.log(chalk.dim('Debug - Raw usage:'), JSON.stringify(result.usage, null, 2));
+      }
+
       // Track token usage if available
       if (result.usage) {
         const usageAny = result.usage as any;
-        const promptTokens = typeof usageAny.promptTokens === 'number' ? usageAny.promptTokens : 0;
-        const completionTokens = typeof usageAny.completionTokens === 'number' ? usageAny.completionTokens : 0;
+
+        // Try different property names that AI SDK might use
+        const promptTokens =
+          usageAny.promptTokens ??
+          usageAny.inputTokens ??
+          usageAny.prompt_tokens ??
+          0;
+        const completionTokens =
+          usageAny.completionTokens ??
+          usageAny.outputTokens ??
+          usageAny.completion_tokens ??
+          0;
         const totalTokens = promptTokens + completionTokens;
         const usage = {
           promptTokens,
           completionTokens,
           totalTokens,
         };
+
+        // Warn if usage is zero (might indicate a tracking issue)
+        if (totalTokens === 0) {
+          console.log(chalk.yellow('⚠️  Warning: Token usage is 0. Set DEBUG_USAGE=1 to see raw usage data.'));
+        }
 
         // Log to database if smart routing is enabled
         if (this.useSmartRouting && this.providerManager && routingDecision) {
@@ -232,6 +356,14 @@ export class MastraChatLoop {
 
         const costInfo = this.costTracker.addUsage(usage, this.currentModel);
         Display.usage(costInfo.usage.promptTokens, costInfo.usage.completionTokens, costInfo.cost);
+
+        // Update session with cost and message count
+        this.sessionManager.incrementMessageCount(this.sessionId);
+        this.sessionManager.addCost(this.sessionId, costInfo.cost);
+      } else {
+        console.log(chalk.yellow('⚠️  No usage data available from model response'));
+        // Still increment message count even without usage
+        this.sessionManager.incrementMessageCount(this.sessionId);
       }
 
       // Add assistant response to history
@@ -251,6 +383,8 @@ export class MastraChatLoop {
       spinner.stop();
       Display.error(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
       console.error(err);
+      Display.newline();
+      Display.info('Chat continues - type your next message or /exit to quit');
     }
   }
 
@@ -271,6 +405,14 @@ export class MastraChatLoop {
     if (!this.isRunning) return;
     this.isRunning = false;
 
+    // End session in database
+    this.sessionManager.updateSession(this.sessionId, {
+      endedAt: new Date(),
+    });
+
+    // Get session info before closing
+    const sessionId = this.sessionId;
+
     // Cleanup E2B sandbox if it was initialized
     try {
       const sandboxManager = E2BSandboxManager.getInstance({
@@ -288,9 +430,15 @@ export class MastraChatLoop {
       this.providerManager.close();
     }
 
+    // Close session manager
+    this.sessionManager.close();
+
     Display.newline();
+    Display.info(`💾 Session saved: ${sessionId}`);
+    Display.info(`   Use 'my-cli resume ${sessionId}' to continue this conversation`);
     Display.sessionSummary(this.costTracker.getMessageCount(), this.costTracker.getTotalCost());
     Display.success('Chat session ended');
-    process.exit(0);
+
+    // Allow process to exit naturally after all cleanup is done
   }
 }

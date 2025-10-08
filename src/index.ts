@@ -12,6 +12,11 @@ import { registerScrapeCommand } from './commands/scrape.js';
 import { statsCommand, StatsCommandOptions } from './commands/stats.js';
 import { registerBudgetCommand } from './commands/budget.js';
 import { strategyCommand, showStrategyCommand } from './commands/strategy.js';
+import { sessionsCommand } from './commands/sessions.js';
+import { resumeCommand } from './commands/resume.js';
+import { forgetCommand } from './commands/forget.js';
+import { rememberCommand } from './commands/remember.js';
+import { recallCommand } from './commands/recall.js';
 import { Display } from './utils/display.js';
 
 const program = new Command();
@@ -101,6 +106,13 @@ program
       process.exit(1);
     }
   });
+
+// Register memory management commands
+program.addCommand(sessionsCommand());
+program.addCommand(resumeCommand());
+program.addCommand(forgetCommand());
+program.addCommand(rememberCommand());
+program.addCommand(recallCommand());
 
 // Default to help if no command provided
 if (!process.argv.slice(2).length) {

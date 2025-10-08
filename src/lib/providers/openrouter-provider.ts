@@ -52,7 +52,7 @@ export class OpenRouterProvider implements LLMProvider {
     };
   }
 
-  isAvailable(): boolean {
+  async isAvailable(): Promise<boolean> {
     try {
       const apiKey = this.client.getApiKey();
       return apiKey !== null && apiKey.length > 0;
